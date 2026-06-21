@@ -44,99 +44,117 @@ const GATAS = [
   }
 ];
 
-// Genera el SVG de una gata con su estado de ánimo
+// Genera el SVG de una gata con sombreado, volumen y vida
 // estado: 'feliz', 'normal', 'hambre', 'comiendo', 'durmiendo'
-// accesorio: null, 'gorro', 'gafas', 'capa'
+// accesorio: null, 'gorro', 'gafas', 'capa', 'corona', 'mascara'...
 function svgGata(gata, estado='feliz', size=200, accesorio=null){
   const g = gata;
+  const uid = g.id + Math.random().toString(36).slice(2,6); // ids únicos para gradientes
   const ojoForma = (estado==='durmiendo')
-    ? `<path d="M68 95 q12 8 24 0" stroke="#1A1A1E" stroke-width="3" fill="none" stroke-linecap="round"/>
-       <path d="M108 95 q12 8 24 0" stroke="#1A1A1E" stroke-width="3" fill="none" stroke-linecap="round"/>`
-    : `<ellipse cx="80" cy="96" rx="11" ry="${estado==='hambre'?9:13}" fill="white"/>
-       <ellipse cx="120" cy="96" rx="11" ry="${estado==='hambre'?9:13}" fill="white"/>
-       <circle cx="80" cy="98" r="7" fill="${g.ojos}"/>
-       <circle cx="120" cy="98" r="7" fill="${g.ojos}"/>
-       <circle cx="80" cy="98" r="3.5" fill="#1A1A1E"/>
-       <circle cx="120" cy="98" r="3.5" fill="#1A1A1E"/>
-       <circle cx="82" cy="95" r="1.6" fill="white"/>
-       <circle cx="122" cy="95" r="1.6" fill="white"/>`;
+    ? `<path d="M68 95 q12 8 24 0" stroke="#1A1A1E" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+       <path d="M108 95 q12 8 24 0" stroke="#1A1A1E" stroke-width="3.5" fill="none" stroke-linecap="round"/>`
+    : `<ellipse cx="80" cy="96" rx="12" ry="${estado==='hambre'?9:14}" fill="white"/>
+       <ellipse cx="120" cy="96" rx="12" ry="${estado==='hambre'?9:14}" fill="white"/>
+       <ellipse cx="80" cy="98" rx="8" ry="${estado==='hambre'?7:10}" fill="${g.ojos}"/>
+       <ellipse cx="120" cy="98" rx="8" ry="${estado==='hambre'?7:10}" fill="${g.ojos}"/>
+       <ellipse cx="80" cy="98" rx="3.5" ry="6" fill="#1A1A1E"/>
+       <ellipse cx="120" cy="98" rx="3.5" ry="6" fill="#1A1A1E"/>
+       <circle cx="83" cy="94" r="2.2" fill="white"/>
+       <circle cx="123" cy="94" r="2.2" fill="white"/>
+       <ellipse class="gato-parpado" cx="80" cy="96" rx="12.5" ry="14" fill="${g.cuerpo}"/>
+       <ellipse class="gato-parpado" cx="120" cy="96" rx="12.5" ry="14" fill="${g.cuerpo}"/>`;
 
   const boca = (estado==='feliz' || estado==='comiendo')
-    ? `<path d="M88 118 q12 12 24 0" stroke="#1A1A1E" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
+    ? `<path d="M86 116 q14 14 28 0" stroke="#1A1A1E" stroke-width="3" fill="none" stroke-linecap="round"/>`
     : (estado==='hambre')
-    ? `<ellipse cx="100" cy="120" rx="6" ry="8" fill="#C0506A"/>`
-    : `<path d="M92 118 q8 6 16 0" stroke="#1A1A1E" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    ? `<ellipse cx="100" cy="120" rx="7" ry="9" fill="#C0506A"/><ellipse cx="100" cy="123" rx="4" ry="5" fill="#E88"/>`
+    : `<path d="M92 117 q8 6 16 0" stroke="#1A1A1E" stroke-width="3" fill="none" stroke-linecap="round"/>`;
 
-  // Rayas del atigrado
   const rayas = g.rayas ? `
-    <path d="M100 48 v20" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round"/>
-    <path d="M84 52 v14" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round"/>
-    <path d="M116 52 v14" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round"/>
-    <path d="M55 110 h16" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round"/>
-    <path d="M129 110 h16" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round"/>
-    <path d="M52 128 h14" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round"/>
-    <path d="M134 128 h14" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round"/>` : '';
+    <path d="M100 46 v22" stroke="${g.cuerpo2}" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
+    <path d="M82 50 v16" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+    <path d="M118 50 v16" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+    <path d="M53 108 h18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M129 108 h18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>` : '';
 
-  // Manchas del tricolor (naranja y negro sobre blanco)
   const tricolor = g.tricolor ? `
-    <path d="M62 60 q-12 18 -2 44 q14 6 22 -4 q-10 -28 -20 -40z" fill="#E8A85C"/>
-    <path d="M138 64 q14 16 6 40 q-12 8 -22 -2 q8 -24 16 -38z" fill="#2B2B30"/>
-    <ellipse cx="100" cy="150" rx="22" ry="14" fill="#E8A85C" opacity="0.85"/>` : '';
+    <path d="M60 58 q-14 20 -2 48 q16 6 24 -6 q-10 -30 -22 -42z" fill="#E8A85C" opacity="0.9"/>
+    <path d="M140 62 q16 18 6 44 q-14 8 -24 -4 q10 -26 18 -40z" fill="#2B2B30" opacity="0.85"/>
+    <ellipse cx="100" cy="155" rx="24" ry="15" fill="#E8A85C" opacity="0.75"/>` : '';
 
-  // Accesorios
   let acc = '';
   if(accesorio==='gorro'){
-    acc = `<path d="M62 56 q38 -34 76 0 z" fill="#FF4B4B"/>
-           <circle cx="100" cy="22" r="8" fill="white"/>
-           <rect x="58" y="52" width="84" height="10" rx="5" fill="white"/>`;
+    acc = `<path d="M60 54 q40 -38 80 0 z" fill="#FF4B4B"/><circle cx="100" cy="18" r="9" fill="white"/><rect x="56" y="50" width="88" height="11" rx="5.5" fill="white"/>`;
   } else if(accesorio==='gafas'){
-    acc = `<circle cx="80" cy="96" r="16" fill="none" stroke="#1A1A1E" stroke-width="4"/>
-           <circle cx="120" cy="96" r="16" fill="none" stroke="#1A1A1E" stroke-width="4"/>
-           <path d="M96 96 h8" stroke="#1A1A1E" stroke-width="4"/>
-           <circle cx="80" cy="96" r="13" fill="#1CB0F6" opacity="0.4"/>
-           <circle cx="120" cy="96" r="13" fill="#1CB0F6" opacity="0.4"/>`;
+    acc = `<circle cx="80" cy="96" r="17" fill="#1CB0F6" opacity="0.35"/><circle cx="120" cy="96" r="17" fill="#1CB0F6" opacity="0.35"/><circle cx="80" cy="96" r="17" fill="none" stroke="#1A1A1E" stroke-width="4"/><circle cx="120" cy="96" r="17" fill="none" stroke="#1A1A1E" stroke-width="4"/><path d="M97 96 h6" stroke="#1A1A1E" stroke-width="4"/>`;
   } else if(accesorio==='capa'){
-    acc = `<path d="M48 130 q52 40 104 0 l-8 50 q-44 22 -88 0 z" fill="#FF4B4B" opacity="0.92"/>
-           <path d="M60 132 l8 8 M140 132 l-8 8" stroke="#FFC800" stroke-width="3"/>`;
+    acc = `<path d="M46 130 q54 42 108 0 l-10 54 q-44 22 -88 0 z" fill="#FF4B4B"/><path d="M58 134 l10 10 M142 134 l-10 10" stroke="#FFC800" stroke-width="4"/>`;
+  } else if(accesorio==='corona'){
+    acc = `<path d="M64 50 l8 -26 12 16 16 -22 16 22 12 -16 8 26 z" fill="#FFC800" stroke="#E6B400" stroke-width="2"/><circle cx="100" cy="34" r="4" fill="#FF4B4B"/>`;
+  } else if(accesorio==='mascara'){
+    acc = `<path d="M58 90 q42 -16 84 0 l-4 16 q-38 -10 -76 0 z" fill="#1A1A2E"/><circle cx="80" cy="96" r="8" fill="white"/><circle cx="120" cy="96" r="8" fill="white"/>`;
+  } else if(accesorio==='monos'){
+    acc = `<path d="M88 150 l-14 -8 0 16 z" fill="#FF4B4B"/><path d="M112 150 l14 -8 0 16 z" fill="#FF4B4B"/><circle cx="100" cy="150" r="6" fill="#E23D3D"/>`;
   }
 
   const corazones = (estado==='comiendo')
-    ? `<text x="150" y="50" font-size="22">❤️</text><text x="40" y="60" font-size="16">❤️</text>` : '';
+    ? `<text x="148" y="48" font-size="24">❤️</text><text x="38" y="58" font-size="18">❤️</text>` : '';
   const zzz = (estado==='durmiendo')
-    ? `<text x="140" y="50" font-size="20" fill="#888">z</text><text x="155" y="38" font-size="14" fill="#aaa">z</text>` : '';
+    ? `<text x="142" y="48" font-size="22" fill="#999">z</text><text x="158" y="34" font-size="15" fill="#bbb">z</text>` : '';
 
-  return `<svg viewBox="0 0 200 200" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
+  // clase de animación
+  const animClass = (estado==='durmiendo') ? 'gato-dormido' : 'gato-vivo';
+
+  return `<svg viewBox="0 0 200 205" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" class="${animClass}">
+    <defs>
+      <radialGradient id="cuerpo${uid}" cx="40%" cy="35%" r="75%">
+        <stop offset="0%" stop-color="${aclararHex(g.cuerpo,25)}"/>
+        <stop offset="100%" stop-color="${g.cuerpo}"/>
+      </radialGradient>
+      <radialGradient id="cabeza${uid}" cx="42%" cy="35%" r="70%">
+        <stop offset="0%" stop-color="${aclararHex(g.cuerpo,30)}"/>
+        <stop offset="100%" stop-color="${g.cuerpo}"/>
+      </radialGradient>
+    </defs>
     ${accesorio==='capa'?acc:''}
-    <!-- cola -->
-    <path d="M150 165 q40 10 36 -30" stroke="${g.cuerpo}" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <!-- sombra suelo -->
+    <ellipse cx="100" cy="196" rx="48" ry="9" fill="#000" opacity="0.12"/>
+    <!-- cola animada -->
+    <path class="gato-cola" d="M150 168 q42 12 38 -30" stroke="${g.cuerpo}" stroke-width="15" fill="none" stroke-linecap="round"/>
     <!-- cuerpo -->
-    <ellipse cx="100" cy="150" rx="52" ry="42" fill="${g.cuerpo}"/>
-    <ellipse cx="100" cy="160" rx="34" ry="26" fill="${g.panza}"/>
+    <ellipse cx="100" cy="152" rx="54" ry="44" fill="url(#cuerpo${uid})"/>
+    <ellipse cx="100" cy="162" rx="35" ry="27" fill="${g.panza}" opacity="0.9"/>
     <!-- patas -->
-    <ellipse cx="78" cy="185" rx="13" ry="9" fill="${g.cuerpo}"/>
-    <ellipse cx="122" cy="185" rx="13" ry="9" fill="${g.cuerpo}"/>
+    <ellipse cx="77" cy="188" rx="14" ry="10" fill="${g.cuerpo}"/>
+    <ellipse cx="123" cy="188" rx="14" ry="10" fill="${g.cuerpo}"/>
+    <ellipse cx="77" cy="190" rx="7" ry="4" fill="${g.panza}" opacity="0.7"/>
+    <ellipse cx="123" cy="190" rx="7" ry="4" fill="${g.panza}" opacity="0.7"/>
     <!-- orejas -->
-    <path d="M58 68 L48 30 L86 56 z" fill="${g.cuerpo}"/>
-    <path d="M142 68 L152 30 L114 56 z" fill="${g.cuerpo}"/>
-    <path d="M60 62 L54 40 L78 56 z" fill="${g.oreja}"/>
-    <path d="M140 62 L146 40 L122 56 z" fill="${g.oreja}"/>
+    <path d="M56 66 L46 26 L88 54 z" fill="${g.cuerpo}"/>
+    <path d="M144 66 L154 26 L112 54 z" fill="${g.cuerpo}"/>
+    <path d="M59 60 L54 38 L80 54 z" fill="${g.oreja}"/>
+    <path d="M141 60 L146 38 L120 54 z" fill="${g.oreja}"/>
     <!-- cabeza -->
-    <circle cx="100" cy="95" r="50" fill="${g.cuerpo}"/>
+    <circle cx="100" cy="94" r="52" fill="url(#cabeza${uid})"/>
     ${rayas}
     ${tricolor}
-    <!-- ojos -->
     ${ojoForma}
-    <!-- nariz -->
-    <path d="M96 108 l8 0 l-4 5 z" fill="${g.nariz}"/>
+    <!-- nariz con brillo -->
+    <path d="M95 107 l10 0 l-5 6 z" fill="${g.nariz}"/>
+    <ellipse cx="98" cy="108" rx="1.5" ry="1" fill="white" opacity="0.6"/>
     ${boca}
     <!-- bigotes -->
-    <path d="M50 105 h26 M52 113 h24" stroke="${g.cuerpo2}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-    <path d="M150 105 h-26 M148 113 h-24" stroke="${g.cuerpo2}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-    <!-- mejillas -->
-    ${estado==='feliz'?`<circle cx="62" cy="112" r="8" fill="#FF9DB0" opacity="0.4"/><circle cx="138" cy="112" r="8" fill="#FF9DB0" opacity="0.4"/>`:''}
+    <path d="M48 104 h28 M50 112 h26" stroke="${g.cuerpo2}" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    <path d="M152 104 h-28 M150 112 h-26" stroke="${g.cuerpo2}" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    ${estado==='feliz'?`<ellipse cx="60" cy="112" rx="9" ry="6" fill="#FF9DB0" opacity="0.45"/><ellipse cx="140" cy="112" rx="9" ry="6" fill="#FF9DB0" opacity="0.45"/>`:''}
     ${accesorio && accesorio!=='capa'?acc:''}
     ${corazones}${zzz}
   </svg>`;
+}
+
+function aclararHex(h,amt=25){
+  try{let r=Math.min(255,parseInt(h.slice(1,3),16)+amt),gg=Math.min(255,parseInt(h.slice(3,5),16)+amt),b=Math.min(255,parseInt(h.slice(5,7),16)+amt);
+    return `#${r.toString(16).padStart(2,'0')}${gg.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;}catch(e){return h;}
 }
 
 // ──────── Tienda ────────
@@ -146,11 +164,14 @@ const TIENDA = [
   {id:"leche_food",   nombre:"Leche",   emoji:"🥛", precio:5,  tipo:"comida", felicidad:15},
   {id:"galleta_food", nombre:"Galleta", emoji:"🍪", precio:8,  tipo:"comida", felicidad:20},
   {id:"pescado_food", nombre:"Pescado", emoji:"🐟", precio:10, tipo:"comida", felicidad:25},
-  // Accesorios (de héroe)
-  {id:"gorro", nombre:"Gorrito",       emoji:"🎩", precio:25, tipo:"accesorio"},
-  {id:"gafas", nombre:"Gafas cool",    emoji:"🕶️", precio:30, tipo:"accesorio"},
-  {id:"capa",  nombre:"Capa de héroe", emoji:"🦸", precio:50, tipo:"accesorio"},
+  // Accesorios de SUPERHÉROE y ropa
+  {id:"capa",    nombre:"Capa de héroe", emoji:"🦸", precio:30, tipo:"accesorio"},
+  {id:"mascara", nombre:"Antifaz héroe", emoji:"🦹", precio:35, tipo:"accesorio"},
+  {id:"corona",  nombre:"Corona",        emoji:"👑", precio:50, tipo:"accesorio"},
+  {id:"gorro",   nombre:"Gorrito",       emoji:"🎩", precio:20, tipo:"accesorio"},
+  {id:"gafas",   nombre:"Gafas cool",    emoji:"🕶️", precio:25, tipo:"accesorio"},
+  {id:"monos",   nombre:"Corbatín",      emoji:"🎀", precio:15, tipo:"accesorio"},
   // Juguetes
   {id:"pelota", nombre:"Pelota", emoji:"⚽", precio:15, tipo:"juguete", felicidad:10},
-  {id:"raton",  nombre:"Ratón",  emoji:"🐭", precio:15, tipo:"juguete", felicidad:10},
+  {id:"raton",  nombre:"Ratón",  emoji:"🐭", precio:12, tipo:"juguete", felicidad:10},
 ];

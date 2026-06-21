@@ -94,6 +94,7 @@ const TRANSPORTE = [
 
 // Configuración de cada módulo (color, nombre, imagen del menú)
 const MODULOS = [
+  {clave:"lecciones",  nombre:"Repite conmigo", color:"#FF86D0", img:"libro", especial:true},
   {clave:"numeros",    nombre:"Números",    color:"#FF4B4B", img:"lapiz"},
   {clave:"vocales",    nombre:"Vocales",    color:"#1CB0F6", img:"libro"},
   {clave:"abecedario", nombre:"Abecedario", color:"#CE82FF", img:"libro"},

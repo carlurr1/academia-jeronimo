@@ -99,6 +99,23 @@
     <div class="confeti-cont" id="confeti-cont"></div>
   </section>
 
+  <!-- ════════ PANTALLA LECCIONES (repite conmigo) ════════ -->
+  <section id="pantalla-leccion" class="pantalla">
+    <header class="juego-header" id="leccion-header" style="background:#1CB0F6;">
+      <button id="leccion-salir" class="btn-salir">✕ Salir</button>
+      <span class="juego-titulo" id="leccion-titulo">Repite conmigo</span>
+      <div class="juego-stats"><span id="leccion-progreso">1/5</span></div>
+    </header>
+    <div class="leccion-cuerpo">
+      <div class="leccion-imagen" id="leccion-imagen"></div>
+      <div class="leccion-instruccion" id="leccion-instruccion">Repite conmigo...</div>
+      <div class="leccion-mic" id="leccion-mic">
+        <button id="leccion-hablar" class="btn-hablar btn-grande">🎤 ¡Repite!</button>
+      </div>
+      <div class="leccion-feedback" id="leccion-feedback"></div>
+    </div>
+  </section>
+
   <!-- ════════ PANTALLA ELEGIR GATA ════════ -->
   <section id="pantalla-elegir-gata" class="pantalla">
     <div class="elegir-contenido">
@@ -177,6 +194,8 @@
 
   <script src="js/datos.js"></script>
   <script src="js/mascota.js"></script>
+  <script src="js/lecciones.js"></script>
+  <script src="js/minijuegos.js"></script>
   <script src="js/voz.js"></script>
   <script src="js/app.js"></script>
   <script>

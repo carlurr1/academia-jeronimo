@@ -254,7 +254,10 @@ function ejTransporte(){
 // ════════════════════════════════════════════════════════════
 
 function renderImagen(render){
-  const cont = document.getElementById('imagen-cont');
+  renderImagenGenerico(document.getElementById('imagen-cont'), render);
+}
+
+function renderImagenGenerico(cont, render){
   cont.innerHTML = '';
   const r = render;
   if (r.tipo==='img'){
@@ -373,11 +376,24 @@ const Juego = {
     const grid=document.getElementById('opciones-grid');
     grid.innerHTML='';
     document.getElementById('mic-texto').textContent='';
+    const esColores = this.clave==='colores';
     this.ej.opciones.forEach((op,i)=>{
       const b=document.createElement('button');
       b.className='btn-opcion';
-      b.style.background=COLORES_BTN[i%4];
-      b.style.boxShadow=`0 5px 0 ${oscurecer(COLORES_BTN[i%4],35)}`;
+      if(esColores){
+        // Cada botón pintado de SU color real (no confunde)
+        const cd = COLORES_CURR.find(c=>c.es===op.txt);
+        const hex = cd ? cd.hex : COLORES_BTN[i%4];
+        b.style.background=hex;
+        b.style.boxShadow=`0 5px 0 ${oscurecer(hex,35)}`;
+        // Texto legible según el fondo
+        const claro = ['#FFC800','#FFFFFF','#FF86D0'].includes(hex);
+        b.style.color = claro ? '#4B4B4B' : 'white';
+        if(hex==='#FFFFFF') b.style.border='3px solid #E8DCC8';
+      } else {
+        b.style.background=COLORES_BTN[i%4];
+        b.style.boxShadow=`0 5px 0 ${oscurecer(COLORES_BTN[i%4],35)}`;
+      }
       b.textContent=op.txt;
       b.onclick=()=>this.responder(op, b);
       grid.appendChild(b);
@@ -426,7 +442,8 @@ const Juego = {
       document.getElementById('juego-estrellas').textContent=`⭐ ${this.aciertos}`;
       this.mostrarOverlay(true, '¡Muy bien!');
       Sonido.correcto();
-      Voz.felicitar(NOMBRE);
+      // Feedback hablado: "¡Exacto, es el 5!"
+      Voz.decir(`¡Exacto, ${NOMBRE}! Es ${this.ej.respuesta}.`);
       const ga=document.getElementById('gata-acompanante');
       if(ga && Estado.datos.gata){
         const g=GATAS.find(x=>x.id===Estado.datos.gata);
@@ -438,7 +455,8 @@ const Juego = {
       if(btn) btn.classList.add('incorrecta');
       this.mostrarOverlay(false, `Era: ${this.ej.respuesta}`);
       Sonido.error();
-      Voz.animar(NOMBRE, this.ej.respuesta);
+      // Feedback hablado: "No, era el 5"
+      Voz.decir(`No, ${NOMBRE}. Era ${this.ej.respuesta}.`);
     }
     this.timer=setTimeout(()=>this.siguiente(), 2300);
   },
@@ -551,7 +569,15 @@ function pintarMascota(){
   const g=GATAS.find(x=>x.id===d.gata)||GATAS[0];
   document.getElementById('mascota-nombre').textContent=g.nombre;
   document.getElementById('mascota-monedas').textContent=d.monedas;
-  document.getElementById('mascota-escena').innerHTML=svgGata(g,estadoGata(),200,d.accesorio);
+  const escena=document.getElementById('mascota-escena');
+  escena.innerHTML=svgGata(g,estadoGata(),200,d.accesorio);
+  escena.onclick=()=>{
+    Sonido.tono(700,0.1,0);
+    escena.innerHTML=svgGata(g,'comiendo',200,d.accesorio);
+    const frases=[`¡Miau! Hola ${NOMBRE}`,'¡Ronroneo!','¡Me encanta jugar contigo!','¡Miau miau!'];
+    Voz.decir(frases[Math.floor(Math.random()*frases.length)]);
+    setTimeout(()=>{ escena.innerHTML=svgGata(g,estadoGata(),200,d.accesorio); },900);
+  };
   document.getElementById('felicidad-fill').style.width=d.felicidad+'%';
   document.getElementById('hambre-fill').style.width=d.hambre+'%';
   document.getElementById('tienda-grid').innerHTML='';
@@ -719,7 +745,10 @@ function pintarMenu(){
       <div class="card-circulo"><img src="img/${m.img}.png" alt=""></div>
       <div class="card-nombre">${m.nombre}</div>
       <div class="card-estado">${estado}</div>`;
-    card.onclick=()=>{ Sonido.click(); Juego.iniciar(m.clave); };
+    card.onclick=()=>{ Sonido.click();
+      if(m.clave==='lecciones'){ abrirLecciones(); }
+      else { Juego.iniciar(m.clave); }
+    };
     grid.appendChild(card);
   });
 }
@@ -804,8 +833,11 @@ window.addEventListener('DOMContentLoaded', ()=>{
   };
   document.getElementById('mascota-volver').onclick=()=>{ pintarMenu(); mostrarPantalla('pantalla-menu'); };
   document.getElementById('btn-tienda').onclick=()=>{ Sonido.click(); pintarTienda(); };
-  document.getElementById('btn-jugar-gato').onclick=()=>{ Sonido.click(); MiniJuego.iniciar(); };
-  document.getElementById('mj-salir').onclick=()=>MiniJuego.salir();
+  document.getElementById('btn-jugar-gato').onclick=()=>{ Sonido.click(); MiniJuegos.abrirSelector(); };
+  document.getElementById('mj-salir').onclick=()=>MiniJuegos.salir();
+  document.getElementById('leccion-salir').onclick=()=>{
+    Voz.detener(); Microfono.detener(); pintarMenu(); mostrarPantalla('pantalla-menu');
+  };
 
   document.getElementById('btn-salir').onclick=()=>{
     Voz.detener(); Microfono.detener();

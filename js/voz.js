@@ -10,11 +10,17 @@ const Voz = {
     if (!('speechSynthesis' in window)) return;
     const cargar = () => {
       const voces = speechSynthesis.getVoices();
-      // Buscar voz en español (preferir femenina/natural)
-      this.vozES = voces.find(v => /es[-_]/i.test(v.lang) && /female|mujer|google|paulina|mónica|helena/i.test(v.name))
-                || voces.find(v => /es[-_]/i.test(v.lang))
-                || voces.find(v => v.lang.startsWith('es'))
-                || null;
+      // Prioridad: español latino femenino → cualquier español latino → femenino español → cualquier español
+      const latino = /es[-_](MX|US|CO|AR|CL|PE|419|LA)/i;
+      const fem = /female|mujer|paulina|mónica|monica|sabina|google|helena|luciana|francisca|elena|catalina|sole/i;
+      this.vozES =
+           voces.find(v => latino.test(v.lang) && fem.test(v.name))
+        || voces.find(v => /paulina|luciana|francisca|google español de estados/i.test(v.name))
+        || voces.find(v => latino.test(v.lang))
+        || voces.find(v => /es[-_]/i.test(v.lang) && fem.test(v.name))
+        || voces.find(v => /es[-_]/i.test(v.lang))
+        || voces.find(v => v.lang.startsWith('es'))
+        || null;
       this.listo = true;
     };
     cargar();
@@ -29,9 +35,9 @@ const Voz = {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(texto);
     if (this.vozES) u.voice = this.vozES;
-    u.lang = 'es-ES';
-    u.rate = 0.92;   // un poco lento para niños
-    u.pitch = 1.15;  // tono más alegre
+    u.lang = this.vozES ? this.vozES.lang : 'es-MX';
+    u.rate = 0.90;   // lento para niños
+    u.pitch = 1.2;   // tono cálido y dulce
     u.volume = 1.0;
     let llamado = false;
     u.onend = () => { if (!llamado && callback) { llamado = true; callback(); } };

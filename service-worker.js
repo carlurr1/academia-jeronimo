@@ -3,7 +3,7 @@ const CACHE = 'academia-jeronimo-v1';
 const ARCHIVOS = [
   './', './index.html',
   './css/estilos.css',
-  './js/datos.js', './js/mascota.js', './js/voz.js', './js/app.js',
+  './js/datos.js', './js/mascota.js', './js/lecciones.js', './js/minijuegos.js', './js/voz.js', './js/app.js',
   './manifest.json'
 ];
 
