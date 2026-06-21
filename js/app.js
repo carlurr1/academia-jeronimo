@@ -876,7 +876,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btn-jugar-gato').onclick=()=>{ Sonido.click(); MiniJuegos.abrirSelector(); };
   document.getElementById('mj-salir').onclick=()=>MiniJuegos.salir();
   document.getElementById('leccion-salir').onclick=()=>{
-    Voz.detener(); Microfono.detener(); pintarMenu(); mostrarPantalla('pantalla-menu');
+    Leccion.salir(); pintarMenu(); mostrarPantalla('pantalla-menu');
   };
 
   document.getElementById('btn-salir').onclick=()=>{

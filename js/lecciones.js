@@ -3,27 +3,46 @@
 // ════════════════════════════════════════════════════════════
 
 const Leccion = {
-  pasos: [], idx: 0, tipo: '',
+  pasos: [], idx: 0, tipo: '', intentos: 0,
+  _sesion: 0,        // id de sesión; al salir se invalida todo callback pendiente
+  _avanzando: false,
 
-  // Construye las lecciones disponibles
   menu(){
     return [
-      {id:'numeros', titulo:'Contar 1 al 5', color:'#FF4B4B'},
+      {id:'numeros',   titulo:'Contar 1 al 5',  color:'#FF4B4B'},
       {id:'numeros10', titulo:'Contar 1 al 10', color:'#FF9600'},
-      {id:'vocales', titulo:'Las vocales', color:'#1CB0F6'},
-      {id:'colores', titulo:'Los colores', color:'#FFC800'},
-      {id:'figuras', titulo:'Las figuras', color:'#CE82FF'},
-      {id:'animales', titulo:'Los animales', color:'#58CC02'},
+      {id:'vocales',   titulo:'Las vocales',    color:'#1CB0F6'},
+      {id:'colores',   titulo:'Los colores',    color:'#FFC800'},
+      {id:'figuras',   titulo:'Las figuras',    color:'#CE82FF'},
+      {id:'animales',  titulo:'Los animales',   color:'#58CC02'},
     ];
   },
 
+  // Genera MUCHAS variantes aceptadas para que el reconocimiento sea tolerante
+  _aceptaNumero(n){
+    const base = {
+      1:['uno','un','1'], 2:['dos','2'], 3:['tres','3'], 4:['cuatro','4'],
+      5:['cinco','5'], 6:['seis','6'], 7:['siete','7'], 8:['ocho','8'],
+      9:['nueve','9'], 10:['diez','10']
+    };
+    return base[n] || [String(n)];
+  },
+  _aceptaVocal(v){
+    const m = {
+      'A':['a','ah','á','la a'], 'E':['e','eh','é','la e'],
+      'I':['i','y','ih','la i'], 'O':['o','oh','ó','la o'],
+      'U':['u','uh','ú','la u']
+    };
+    return m[v] || [v.toLowerCase()];
+  },
+
   construirPasos(id){
-    if(id==='numeros') return [1,2,3,4,5].map(n=>({texto:NUMEROS[n].es, decir:String(n), acepta:[NUMEROS[n].es,String(n)], render:{tipo:'numero',valor:n}}));
-    if(id==='numeros10') return [1,2,3,4,5,6,7,8,9,10].map(n=>({texto:NUMEROS[n].es, decir:String(n), acepta:[NUMEROS[n].es,String(n)], render:{tipo:'numero',valor:n}}));
-    if(id==='vocales') return VOCALES.map(v=>({texto:v.letra, decir:v.nombre, acepta:[v.nombre,v.letra.toLowerCase()], render:{tipo:'letra',valor:v.letra.toLowerCase(),color:v.color}}));
-    if(id==='colores') return COLORES_CURR.slice(0,6).map(c=>({texto:c.es, decir:c.es, acepta:[c.es], render:{tipo:'color',color:c.hex}}));
-    if(id==='figuras') return FIGURAS.map(f=>({texto:f.es, decir:f.es, acepta:[f.es], render:{tipo:'figura',figura:f.es,color:FIG_HEX[f.es]}}));
-    if(id==='animales') return ANIMALES.slice(0,8).map(a=>({texto:a.es, decir:a.es, acepta:[a.es], render:{tipo:'img',img:a.img}}));
+    if(id==='numeros')   return [1,2,3,4,5].map(n=>({decir:NUMEROS[n].es, acepta:this._aceptaNumero(n), render:{tipo:'numero',valor:n}}));
+    if(id==='numeros10') return [1,2,3,4,5,6,7,8,9,10].map(n=>({decir:NUMEROS[n].es, acepta:this._aceptaNumero(n), render:{tipo:'numero',valor:n}}));
+    if(id==='vocales')   return VOCALES.map(v=>({decir:'la '+v.nombre, acepta:this._aceptaVocal(v.letra), render:{tipo:'letra',valor:v.letra.toLowerCase(),color:v.color}}));
+    if(id==='colores')   return COLORES_CURR.slice(0,6).map(c=>({decir:c.es, acepta:[c.es, c.es+'o', c.es+'a'], render:{tipo:'color',color:c.hex}}));
+    if(id==='figuras')   return FIGURAS.map(f=>({decir:f.es, acepta:[f.es, f.es.replace('á','a').replace('í','i').replace('ó','o')], render:{tipo:'figura',figura:f.es,color:FIG_HEX[f.es]}}));
+    if(id==='animales')  return ANIMALES.slice(0,8).map(a=>({decir:a.es, acepta:[a.es, a.es.replace('ó','o').replace('á','a')], render:{tipo:'img',img:a.img}}));
     return [];
   },
 
@@ -31,38 +50,56 @@ const Leccion = {
     this.tipo=id;
     this.pasos=this.construirPasos(id);
     this.idx=0;
+    this.intentos=0;
+    this._avanzando=false;
+    this._sesion++;                       // nueva sesión
+    const miSesion=this._sesion;
     const lec=this.menu().find(l=>l.id===id);
     document.getElementById('leccion-header').style.background=lec.color;
     document.getElementById('leccion-titulo').textContent=lec.titulo;
+    // Restaurar la zona del micrófono (por si quedó del 'fin')
+    document.getElementById('leccion-mic').innerHTML=
+      '<button id="leccion-hablar" class="btn-hablar btn-grande">🎤 Hablar</button>';
     mostrarPantalla('pantalla-leccion');
     Voz.decir(`Vamos a aprender. Escucha y repite conmigo, ${NOMBRE}.`, ()=>{
-      setTimeout(()=>this.paso(),400);
+      if(this._vigente(miSesion)) setTimeout(()=>{ if(this._vigente(miSesion)) this.paso(); },300);
     });
   },
 
+  // ¿sigue siendo la misma sesión Y estamos en la pantalla de lección?
+  _vigente(miSesion){
+    return miSesion===this._sesion &&
+           document.getElementById('pantalla-leccion').classList.contains('activa');
+  },
+
+  salir(){
+    this._sesion++;            // invalida TODO callback pendiente
+    this._avanzando=false;
+    Voz.detener();
+    Microfono.detener();
+  },
+
   paso(){
+    const miSesion=this._sesion;
     if(this.idx>=this.pasos.length){ this.fin(); return; }
-    this.intentos = 0;   // reinicia intentos por paso
+    this.intentos=0;
     const p=this.pasos[this.idx];
     document.getElementById('leccion-progreso').textContent=`${this.idx+1}/${this.pasos.length}`;
     renderImagenEn('leccion-imagen', p.render);
     document.getElementById('leccion-instruccion').textContent=`Di: "${p.decir}"`;
     document.getElementById('leccion-feedback').textContent='';
     this._prepararBoton();
-    // La voz dice el elemento y luego escucha (una sola vez)
     Voz.decir(`Repite conmigo. ${p.decir}`, ()=>{
-      if(this._activa()) this.escuchar();
+      if(this._vigente(miSesion)) this.escuchar();
     });
   },
-
-  _activa(){ return document.getElementById('pantalla-leccion').classList.contains('activa'); },
 
   _prepararBoton(){
     const btn=document.getElementById('leccion-hablar');
     btn.classList.remove('escuchando');
     btn.textContent='🎤 Hablar';
     btn.onclick=()=>{ if(!Microfono.escuchando) this.escuchar(); };
-    // Botón "siguiente" siempre disponible
+    let mic=document.getElementById('leccion-mic');
     let sig=document.getElementById('leccion-siguiente');
     if(!sig){
       sig=document.createElement('button');
@@ -70,13 +107,14 @@ const Leccion = {
       sig.className='btn-mediano btn-azul';
       sig.style.marginLeft='10px';
       sig.textContent='Siguiente →';
-      document.getElementById('leccion-mic').appendChild(sig);
+      mic.appendChild(sig);
     }
     sig.onclick=()=>{ Voz.detener(); Microfono.detener(); this.avanzar(); };
   },
 
   escuchar(){
-    if(!this._activa()) return;
+    const miSesion=this._sesion;
+    if(!this._vigente(miSesion)) return;
     const btn=document.getElementById('leccion-hablar');
     const fb=document.getElementById('leccion-feedback');
     if(!Microfono.disponible){
@@ -88,26 +126,28 @@ const Leccion = {
     btn.classList.add('escuchando');
     fb.textContent='';
     Microfono.escuchar((txt,ok)=>{
+      // si salió o cambió de sesión, NO hacer nada
+      if(!this._vigente(miSesion)) return;
       btn.classList.remove('escuchando');
       btn.textContent='🎤 Hablar';
-      if(!this._activa()) return;   // salió de la pantalla → no hace nada
       const p=this.pasos[this.idx];
-      const dichos=(txt||'').split('|');
-      const acerto = ok && txt && dichos.some(d => p.acepta.some(a => d.includes(a.toLowerCase())));
+      const dichos=(txt||'').toLowerCase().split('|').map(s=>s.trim());
+      // Comparación flexible: cualquier variante contenida en lo que dijo
+      const acerto = ok && txt && dichos.some(d =>
+        p.acepta.some(a => d===a || d.includes(a) || a.includes(d)));
       if(acerto){
         fb.textContent='¡Muy bien! 🎉'; fb.style.color='#58CC02';
         Sonido.correcto();
-        Voz.decir(`¡Muy bien! Es ${p.decir}.`, ()=>{ if(this._activa()) this.avanzar(); });
+        Voz.decir(`¡Muy bien! Es ${p.decir}.`, ()=>{ if(this._vigente(miSesion)) this.avanzar(); });
       } else {
         this.intentos++;
         if(this.intentos>=2){
-          // Tras 2 intentos, avanza solo (no se traba nunca)
-          fb.textContent=`Era "${p.decir}". ¡Vamos al siguiente!`; fb.style.color='#FF9600';
-          Voz.decir(`Era ${p.decir}. Muy bien, sigamos.`, ()=>{ if(this._activa()) this.avanzar(); });
+          fb.textContent=`Era "${p.decir}". ¡Sigamos!`; fb.style.color='#FF9600';
+          Voz.decir(`Era ${p.decir}. Muy bien, sigamos.`, ()=>{ if(this._vigente(miSesion)) this.avanzar(); });
         } else {
-          fb.textContent=`Inténtalo: "${p.decir}" o toca Hablar 🎤`; fb.style.color='#FF9600';
+          fb.textContent=`Inténtalo otra vez 🎤 o toca Siguiente`; fb.style.color='#FF9600';
           Voz.decir(`Otra vez. ${p.decir}.`);
-          // NO vuelve a escuchar solo — espera a que toque el botón
+          // NO vuelve a escuchar solo
         }
       }
     });
@@ -116,8 +156,9 @@ const Leccion = {
   avanzar(){
     if(this._avanzando) return;
     this._avanzando=true;
+    const miSesion=this._sesion;
     this.idx++;
-    setTimeout(()=>{ this._avanzando=false; this.paso(); },500);
+    setTimeout(()=>{ this._avanzando=false; if(this._vigente(miSesion)) this.paso(); },400);
   },
 
   fin(){
@@ -129,19 +170,17 @@ const Leccion = {
     document.getElementById('leccion-feedback').textContent='Ganaste ⭐2 y 🪙5';
     document.getElementById('leccion-feedback').style.color='#58CC02';
     document.getElementById('leccion-mic').innerHTML=
-      '<button class="btn-grande btn-verde" onclick="pintarMenu();mostrarPantalla(\'pantalla-menu\')">🏠 Menú</button>';
-    Voz.decir(`¡Felicidades ${NOMBRE}! Terminaste la lección. ¡Eres muy inteligente!`);
+      '<button class="btn-grande btn-verde" id="lec-fin-menu">🏠 Menú</button>';
+    document.getElementById('lec-fin-menu').onclick=()=>{ this.salir(); pintarMenu(); mostrarPantalla('pantalla-menu'); };
+    Voz.decir(`¡Felicidades ${NOMBRE}! Terminaste la lección.`);
     lanzarConfeti();
   }
 };
 
-// Pinta el menú de lecciones (reusa la pantalla de juego como selector simple)
+// Selector de lecciones
 function abrirLecciones(){
-  // Mostrar selector dentro de la pantalla de menú de lecciones
+  Leccion.salir();   // por si venía de otra
   const grid=document.getElementById('grid-modulos');
-  // Reusamos: creamos un overlay de selección
-  let html='<div style="grid-column:1/-1;text-align:center;margin-bottom:10px;">'+
-    '<h2 style="color:#4B4B4B;">Elige una lección para repetir 🗣️</h2></div>';
   mostrarPantalla('pantalla-menu');
   document.querySelector('.menu-saludo h2').textContent='¡Vamos a repetir juntos, '+NOMBRE+'!';
   grid.innerHTML='';
@@ -155,18 +194,15 @@ function abrirLecciones(){
     card.onclick=()=>{ Sonido.click(); Leccion.iniciar(l.id); };
     grid.appendChild(card);
   });
-  // Botón volver
   const volver=document.createElement('button');
-  volver.className='card-modulo';
-  volver.style.background='#B0B0B0';
+  volver.className='card-modulo'; volver.style.background='#B0B0B0';
   volver.style.boxShadow='0 6px 0 #909090';
   volver.innerHTML=`<div class="card-circulo"><span style="font-size:44px">🏠</span></div>
     <div class="card-nombre" style="font-size:18px">Volver</div>`;
-  volver.onclick=()=>{ pintarMenu(); };
+  volver.onclick=()=>pintarMenu();
   grid.appendChild(volver);
 }
 
-// Helper: renderiza imagen en un contenedor dado
 function renderImagenEn(contId, render){
   renderImagenGenerico(document.getElementById(contId), render);
 }

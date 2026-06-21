@@ -88,36 +88,54 @@ const Microfono = {
   init() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { this.disponible = false; return; }
-    this.rec = new SR();
-    this.rec.lang = 'es-ES';
-    this.rec.continuous = false;
-    this.rec.interimResults = false;
-    this.rec.maxAlternatives = 3;
+    this.SR = SR;
     this.disponible = true;
   },
 
   escuchar(onResultado) {
     if (!this.disponible || this.escuchando) { onResultado('', false); return; }
+    // Crear instancia nueva cada vez (más estable en Android)
+    const rec = new this.SR();
+    rec.lang = 'es-MX';          // español latino
+    rec.continuous = false;
+    rec.interimResults = true;   // captura también lo intermedio (oye más)
+    rec.maxAlternatives = 5;     // más opciones = más chance de acertar
+    this.rec = rec;
     this.escuchando = true;
     let resuelto = false;
+    let mejor = '';
+
     const finalizar = (txt, ok) => {
       if (resuelto) return;
       resuelto = true;
       this.escuchando = false;
+      try { rec.stop(); } catch(e){}
       onResultado(txt, ok);
     };
-    this.rec.onresult = (e) => {
+
+    rec.onresult = (e) => {
       const alts = [];
-      for (let i=0; i<e.results[0].length; i++) alts.push(e.results[0][i].transcript.toLowerCase().trim());
-      finalizar(alts.join('|'), true);
+      for (let r = 0; r < e.results.length; r++) {
+        for (let i = 0; i < e.results[r].length; i++) {
+          const t = e.results[r][i].transcript.toLowerCase().trim();
+          if (t) alts.push(t);
+        }
+      }
+      mejor = alts.join('|');
+      // Si es resultado final, resolver
+      if (e.results[e.results.length-1].isFinal) {
+        finalizar(mejor, true);
+      }
     };
-    this.rec.onerror = () => finalizar('', false);
-    this.rec.onend = () => finalizar('', false);
-    try { this.rec.start(); } catch(e) { finalizar('', false); }
+    rec.onerror = () => finalizar(mejor, mejor!=='');
+    rec.onend = () => finalizar(mejor, mejor!=='');
+    // Timeout de seguridad: 6 segundos
+    setTimeout(() => { if(!resuelto) finalizar(mejor, mejor!==''); }, 6000);
+    try { rec.start(); } catch(e) { finalizar('', false); }
   },
 
   detener() {
-    if (this.rec && this.escuchando) { try{ this.rec.stop(); }catch(e){} }
+    if (this.rec && this.escuchando) { try{ this.rec.abort(); }catch(e){} try{ this.rec.stop(); }catch(e){} }
     this.escuchando = false;
   }
 };
