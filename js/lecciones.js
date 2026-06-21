@@ -42,25 +42,46 @@ const Leccion = {
 
   paso(){
     if(this.idx>=this.pasos.length){ this.fin(); return; }
+    this.intentos = 0;   // reinicia intentos por paso
     const p=this.pasos[this.idx];
     document.getElementById('leccion-progreso').textContent=`${this.idx+1}/${this.pasos.length}`;
     renderImagenEn('leccion-imagen', p.render);
-    document.getElementById('leccion-instruccion').textContent=`Repite conmigo: "${p.decir}"`;
+    document.getElementById('leccion-instruccion').textContent=`Di: "${p.decir}"`;
     document.getElementById('leccion-feedback').textContent='';
-    // La voz dice el elemento, luego invita a repetir
-    Voz.decir(`Repite conmigo: ${p.decir}`, ()=>{
-      this.escuchar();
+    this._prepararBoton();
+    // La voz dice el elemento y luego escucha (una sola vez)
+    Voz.decir(`Repite conmigo. ${p.decir}`, ()=>{
+      if(this._activa()) this.escuchar();
     });
   },
 
+  _activa(){ return document.getElementById('pantalla-leccion').classList.contains('activa'); },
+
+  _prepararBoton(){
+    const btn=document.getElementById('leccion-hablar');
+    btn.classList.remove('escuchando');
+    btn.textContent='🎤 Hablar';
+    btn.onclick=()=>{ if(!Microfono.escuchando) this.escuchar(); };
+    // Botón "siguiente" siempre disponible
+    let sig=document.getElementById('leccion-siguiente');
+    if(!sig){
+      sig=document.createElement('button');
+      sig.id='leccion-siguiente';
+      sig.className='btn-mediano btn-azul';
+      sig.style.marginLeft='10px';
+      sig.textContent='Siguiente →';
+      document.getElementById('leccion-mic').appendChild(sig);
+    }
+    sig.onclick=()=>{ Voz.detener(); Microfono.detener(); this.avanzar(); };
+  },
+
   escuchar(){
+    if(!this._activa()) return;
     const btn=document.getElementById('leccion-hablar');
     const fb=document.getElementById('leccion-feedback');
     if(!Microfono.disponible){
-      fb.textContent='Toca el botón verde para continuar 👇';
-      btn.textContent='✓ Siguiente';
-      btn.classList.remove('escuchando');
-      btn.onclick=()=>this.avanzar(true);
+      fb.textContent='Toca "Siguiente" para continuar 👉';
+      fb.style.color='#1CB0F6';
       return;
     }
     btn.textContent='🔴 Te escucho...';
@@ -68,31 +89,35 @@ const Leccion = {
     fb.textContent='';
     Microfono.escuchar((txt,ok)=>{
       btn.classList.remove('escuchando');
-      btn.textContent='🎤 ¡Repite!';
+      btn.textContent='🎤 Hablar';
+      if(!this._activa()) return;   // salió de la pantalla → no hace nada
       const p=this.pasos[this.idx];
       const dichos=(txt||'').split('|');
-      const acerto = ok && dichos.some(d => p.acepta.some(a => d.includes(a.toLowerCase())));
+      const acerto = ok && txt && dichos.some(d => p.acepta.some(a => d.includes(a.toLowerCase())));
       if(acerto){
         fb.textContent='¡Muy bien! 🎉'; fb.style.color='#58CC02';
         Sonido.correcto();
-        Voz.decir(`¡Muy bien, ${NOMBRE}! Es ${p.decir}.`, ()=>this.avanzar(true));
+        Voz.decir(`¡Muy bien! Es ${p.decir}.`, ()=>{ if(this._activa()) this.avanzar(); });
       } else {
-        fb.textContent=`Casi... era "${p.decir}" 💪`; fb.style.color='#FF9600';
-        Sonido.error();
-        // La corrige: "No, sigue, es 4 y no 8"
-        Voz.decir(`Casi. Escucha otra vez: ${p.decir}. ¡Inténtalo!`, ()=>{
-          this.escuchar();   // vuelve a intentar el mismo
-        });
+        this.intentos++;
+        if(this.intentos>=2){
+          // Tras 2 intentos, avanza solo (no se traba nunca)
+          fb.textContent=`Era "${p.decir}". ¡Vamos al siguiente!`; fb.style.color='#FF9600';
+          Voz.decir(`Era ${p.decir}. Muy bien, sigamos.`, ()=>{ if(this._activa()) this.avanzar(); });
+        } else {
+          fb.textContent=`Inténtalo: "${p.decir}" o toca Hablar 🎤`; fb.style.color='#FF9600';
+          Voz.decir(`Otra vez. ${p.decir}.`);
+          // NO vuelve a escuchar solo — espera a que toque el botón
+        }
       }
-      // Botón manual para no trabar
-      btn.onclick=()=>this.escuchar();
     });
-    btn.onclick=()=>this.escuchar();
   },
 
   avanzar(){
+    if(this._avanzando) return;
+    this._avanzando=true;
     this.idx++;
-    setTimeout(()=>this.paso(),600);
+    setTimeout(()=>{ this._avanzando=false; this.paso(); },500);
   },
 
   fin(){

@@ -5,6 +5,8 @@
 const Voz = {
   vozES: null,
   listo: false,
+  _turno: 0,
+  _cancelado: false,
 
   init() {
     if (!('speechSynthesis' in window)) return;
@@ -31,21 +33,28 @@ const Voz = {
 
   // Lee un texto en voz alta. callback() se ejecuta al terminar.
   decir(texto, callback) {
+    this._cancelado = false;
+    const miTurno = ++this._turno;
     if (!('speechSynthesis' in window)) { if (callback) callback(); return; }
-    speechSynthesis.cancel();
+    try { speechSynthesis.cancel(); } catch(e){}
     const u = new SpeechSynthesisUtterance(texto);
     if (this.vozES) u.voice = this.vozES;
     u.lang = this.vozES ? this.vozES.lang : 'es-MX';
-    u.rate = 0.90;   // lento para niños
-    u.pitch = 1.2;   // tono cálido y dulce
+    u.rate = 0.95;   // natural, menos robótico
+    u.pitch = 1.1;   // cálido pero natural
     u.volume = 1.0;
     let llamado = false;
-    u.onend = () => { if (!llamado && callback) { llamado = true; callback(); } };
-    u.onerror = () => { if (!llamado && callback) { llamado = true; callback(); } };
-    speechSynthesis.speak(u);
-    // Respaldo por si onend no dispara (algunos Android)
-    const estimado = Math.max(1500, texto.length * 90);
-    setTimeout(() => { if (!llamado && callback) { llamado = true; callback(); } }, estimado);
+    const disparar = () => {
+      if (llamado) return;
+      if (this._cancelado || miTurno !== this._turno) { llamado = true; return; }
+      llamado = true;
+      if (callback) callback();
+    };
+    u.onend = disparar;
+    u.onerror = disparar;
+    try { speechSynthesis.speak(u); } catch(e){ disparar(); return; }
+    const estimado = Math.max(1500, texto.length * 80);
+    setTimeout(disparar, estimado);
   },
 
   felicitar(nombre) {
@@ -63,7 +72,10 @@ const Voz = {
   },
 
   detener() {
-    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    this._cancelado = true;
+    if ('speechSynthesis' in window) {
+      try { speechSynthesis.cancel(); } catch(e){}
+    }
   }
 };
 

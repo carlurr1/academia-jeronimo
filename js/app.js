@@ -51,6 +51,9 @@ const Estado = {
 
 // ──────── Navegación entre pantallas ────────
 function mostrarPantalla(id) {
+  // Al cambiar de pantalla SIEMPRE callar voz y micrófono
+  try { Voz.detener(); } catch(e){}
+  try { Microfono.detener(); } catch(e){}
   document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
   document.getElementById(id).classList.add('activa');
 }
@@ -580,25 +583,61 @@ function pintarMascota(){
   };
   document.getElementById('felicidad-fill').style.width=d.felicidad+'%';
   document.getElementById('hambre-fill').style.width=d.hambre+'%';
-  document.getElementById('tienda-grid').innerHTML='';
 }
 
-function pintarTienda(){
+function pintarTienda(categoria){
+  categoria = categoria || 'accesorio';   // empieza mostrando ROPA/héroes
   const d=Estado.datos;
   const grid=document.getElementById('tienda-grid');
   grid.innerHTML='';
-  TIENDA.forEach(item=>{
+
+  // Pestañas de categoría
+  const tabs=document.createElement('div');
+  tabs.style.cssText='grid-column:1/-1;display:flex;gap:10px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;';
+  const cats=[
+    {id:'accesorio', nombre:'🦸 Ropa y Héroe'},
+    {id:'comida',    nombre:'🍎 Comida'},
+    {id:'juguete',   nombre:'⚽ Juguetes'},
+  ];
+  cats.forEach(c=>{
+    const t=document.createElement('button');
+    t.textContent=c.nombre;
+    const activa = c.id===categoria;
+    t.style.cssText=`padding:10px 18px;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;
+      background:${activa?'#FF86D0':'#FFF'};color:${activa?'white':'#4B4B4B'};
+      box-shadow:0 3px 0 ${activa?'#E86BB8':'#E8DCC8'};`;
+    t.onclick=()=>pintarTienda(c.id);
+    tabs.appendChild(t);
+  });
+  grid.appendChild(tabs);
+
+  // Items de la categoría
+  TIENDA.filter(i=>i.tipo===categoria).forEach(item=>{
     const div=document.createElement('div');
     const esAccesorio=item.tipo==='accesorio';
     const comprado=esAccesorio && d.comprados.includes(item.id);
+    const puesto = d.accesorio===item.id;
     const puede=d.monedas>=item.precio;
     div.className='tienda-item'+(comprado?' comprado':'')+(!puede&&!comprado?' bloqueado':'');
+    let estado;
+    if(comprado) estado = puesto ? '✓ Puesto' : 'Tocar para poner';
+    else estado = '🪙 '+item.precio;
     div.innerHTML=`<div class="ti-emoji">${item.emoji}</div>
       <div class="ti-nombre">${item.nombre}</div>
-      <div class="ti-precio">${comprado?'✓ Tuyo':'🪙 '+item.precio}</div>`;
+      <div class="ti-precio">${estado}</div>`;
+    if(puesto) div.style.borderColor='#FF86D0';
     div.onclick=()=>comprarItem(item);
     grid.appendChild(div);
   });
+
+  // Si es accesorio, botón para quitar la ropa
+  if(categoria==='accesorio' && d.accesorio){
+    const quitar=document.createElement('div');
+    quitar.className='tienda-item';
+    quitar.innerHTML=`<div class="ti-emoji">🚫</div><div class="ti-nombre">Quitar ropa</div><div class="ti-precio">&nbsp;</div>`;
+    quitar.onclick=()=>{ d.accesorio=null; Estado.guardar(); pintarMascota(); pintarTienda('accesorio'); Sonido.click(); };
+    grid.appendChild(quitar);
+  }
 }
 
 function comprarItem(item){
@@ -829,10 +868,11 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btn-mimascota').onclick=()=>{
     if(!Estado.datos.gata){ pintarElegirGata(); mostrarPantalla('pantalla-elegir-gata'); return; }
     pintarMascota(); mostrarPantalla('pantalla-mascota');
-    Voz.decir(`¡Hola! Esta es tu gatita, ${NOMBRE}.`);
+    pintarTienda('accesorio');   // muestra ropa de héroe de una vez
+    Voz.decir(`¡Hola! Esta es tu gatita, ${NOMBRE}. ¡Puedes vestirla!`);
   };
   document.getElementById('mascota-volver').onclick=()=>{ pintarMenu(); mostrarPantalla('pantalla-menu'); };
-  document.getElementById('btn-tienda').onclick=()=>{ Sonido.click(); pintarTienda(); };
+  document.getElementById('btn-tienda').onclick=()=>{ Sonido.click(); pintarTienda('accesorio'); };
   document.getElementById('btn-jugar-gato').onclick=()=>{ Sonido.click(); MiniJuegos.abrirSelector(); };
   document.getElementById('mj-salir').onclick=()=>MiniJuegos.salir();
   document.getElementById('leccion-salir').onclick=()=>{
