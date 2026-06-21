@@ -7,19 +7,37 @@ const PREGUNTAS_POR_SESION = 10;
 
 // ──────── Estado persistente (localStorage) ────────
 const Estado = {
-  datos: { nivel:1, xp:0, estrellas:0, monedas:10, progreso:{} },
+  datos: { nivel:1, xp:0, estrellas:0, monedas:10, progreso:{},
+           gata:null, felicidad:80, hambre:50, comprados:[], accesorio:null,
+           ultimaVisita:Date.now() },
   cargar() {
     try {
       const g = localStorage.getItem('academia_jeronimo');
       if (g) this.datos = JSON.parse(g);
     } catch(e){}
     if (!this.datos.progreso) this.datos.progreso = {};
+    if (this.datos.gata===undefined) this.datos.gata=null;
+    if (this.datos.felicidad===undefined) this.datos.felicidad=80;
+    if (this.datos.hambre===undefined) this.datos.hambre=50;
+    if (!this.datos.comprados) this.datos.comprados=[];
+    if (this.datos.accesorio===undefined) this.datos.accesorio=null;
+    // Bajar felicidad/subir hambre con el tiempo
+    const horas = (Date.now()-(this.datos.ultimaVisita||Date.now()))/3600000;
+    if(horas>0){
+      this.datos.felicidad = Math.max(0, this.datos.felicidad - Math.floor(horas*5));
+      this.datos.hambre = Math.min(100, this.datos.hambre + Math.floor(horas*8));
+    }
+    this.datos.ultimaVisita = Date.now();
   },
   guardar() {
+    this.datos.ultimaVisita = Date.now();
     try { localStorage.setItem('academia_jeronimo', JSON.stringify(this.datos)); } catch(e){}
   },
   reiniciar() {
-    this.datos = { nivel:1, xp:0, estrellas:0, monedas:10, progreso:{} };
+    const gata = this.datos.gata; // conservar la gata elegida
+    this.datos = { nivel:1, xp:0, estrellas:0, monedas:10, progreso:{},
+                   gata:gata, felicidad:80, hambre:50, comprados:[], accesorio:null,
+                   ultimaVisita:Date.now() };
     this.guardar();
   },
   registrarModulo(clave, aciertos, total) {
@@ -312,6 +330,12 @@ const Juego = {
     document.getElementById('juego-estrellas').textContent='⭐ 0';
 
     mostrarPantalla('pantalla-juego');
+    // Gata acompañante
+    const ga=document.getElementById('gata-acompanante');
+    if(ga && Estado.datos.gata){
+      const g=GATAS.find(x=>x.id===Estado.datos.gata);
+      if(g) ga.innerHTML=svgGata(g,'feliz',80,Estado.datos.accesorio);
+    }
     Voz.decir(`¡Hola ${NOMBRE}! ¡Vamos a practicar ${this.modulo.nombre}!`, ()=>{
       setTimeout(()=>this.siguiente(), 300);
     });
@@ -403,6 +427,12 @@ const Juego = {
       this.mostrarOverlay(true, '¡Muy bien!');
       Sonido.correcto();
       Voz.felicitar(NOMBRE);
+      const ga=document.getElementById('gata-acompanante');
+      if(ga && Estado.datos.gata){
+        const g=GATAS.find(x=>x.id===Estado.datos.gata);
+        if(g){ ga.innerHTML=svgGata(g,'comiendo',80,Estado.datos.accesorio);
+          setTimeout(()=>{ if(g) ga.innerHTML=svgGata(g,'feliz',80,Estado.datos.accesorio);},700); }
+      }
     } else {
       this.errores++;
       if(btn) btn.classList.add('incorrecta');
@@ -488,6 +518,183 @@ function lanzarConfeti(){
     cont.appendChild(c);
   }
 }
+
+// ════════════════════════════════════════════════════════════
+//  MASCOTA — selección, escena, tienda
+// ════════════════════════════════════════════════════════════
+function pintarElegirGata(){
+  const grid=document.getElementById('gatas-grid');
+  grid.innerHTML='';
+  GATAS.forEach(g=>{
+    const card=document.createElement('button');
+    card.className='gata-card';
+    card.innerHTML=svgGata(g,'feliz',150)+`<div class="gn">${g.nombre}</div>`;
+    card.onclick=()=>{
+      Estado.datos.gata=g.id; Estado.guardar();
+      Sonido.click();
+      Voz.decir(`¡Qué linda gatita! Ahora vamos a aprender, ${NOMBRE}.`);
+      pintarMenu(); mostrarPantalla('pantalla-menu');
+    };
+    grid.appendChild(card);
+  });
+}
+
+function estadoGata(){
+  const d=Estado.datos;
+  if(d.hambre>=70) return 'hambre';
+  if(d.felicidad>=70) return 'feliz';
+  return 'normal';
+}
+
+function pintarMascota(){
+  const d=Estado.datos;
+  const g=GATAS.find(x=>x.id===d.gata)||GATAS[0];
+  document.getElementById('mascota-nombre').textContent=g.nombre;
+  document.getElementById('mascota-monedas').textContent=d.monedas;
+  document.getElementById('mascota-escena').innerHTML=svgGata(g,estadoGata(),200,d.accesorio);
+  document.getElementById('felicidad-fill').style.width=d.felicidad+'%';
+  document.getElementById('hambre-fill').style.width=d.hambre+'%';
+  document.getElementById('tienda-grid').innerHTML='';
+}
+
+function pintarTienda(){
+  const d=Estado.datos;
+  const grid=document.getElementById('tienda-grid');
+  grid.innerHTML='';
+  TIENDA.forEach(item=>{
+    const div=document.createElement('div');
+    const esAccesorio=item.tipo==='accesorio';
+    const comprado=esAccesorio && d.comprados.includes(item.id);
+    const puede=d.monedas>=item.precio;
+    div.className='tienda-item'+(comprado?' comprado':'')+(!puede&&!comprado?' bloqueado':'');
+    div.innerHTML=`<div class="ti-emoji">${item.emoji}</div>
+      <div class="ti-nombre">${item.nombre}</div>
+      <div class="ti-precio">${comprado?'✓ Tuyo':'🪙 '+item.precio}</div>`;
+    div.onclick=()=>comprarItem(item);
+    grid.appendChild(div);
+  });
+}
+
+function comprarItem(item){
+  const d=Estado.datos;
+  const esAccesorio=item.tipo==='accesorio';
+  if(esAccesorio && d.comprados.includes(item.id)){
+    // Ya comprado → ponérselo / quitárselo
+    d.accesorio = (d.accesorio===item.id)? null : item.id;
+    Estado.guardar(); pintarMascota(); pintarTienda(); Sonido.click();
+    return;
+  }
+  if(d.monedas<item.precio){
+    Voz.decir(`Necesitas más monedas, ${NOMBRE}. ¡Juega para ganar!`);
+    return;
+  }
+  d.monedas-=item.precio;
+  Sonido.correcto();
+  if(item.tipo==='comida' || item.tipo==='juguete'){
+    d.felicidad=Math.min(100,d.felicidad+(item.felicidad||10));
+    if(item.tipo==='comida') d.hambre=Math.max(0,d.hambre-30);
+    // Animación de comer
+    const g=GATAS.find(x=>x.id===d.gata)||GATAS[0];
+    document.getElementById('mascota-escena').innerHTML=svgGata(g,'comiendo',200,d.accesorio);
+    Voz.decir(item.tipo==='comida'?`¡Ñam ñam! Gracias ${NOMBRE}.`:`¡Qué divertido!`);
+    setTimeout(()=>pintarMascota(),1200);
+  } else if(esAccesorio){
+    d.comprados.push(item.id);
+    d.accesorio=item.id;
+    Voz.decir(`¡Qué elegante se ve!`);
+    pintarMascota();
+  }
+  Estado.guardar();
+  document.getElementById('mascota-monedas').textContent=d.monedas;
+  pintarTienda();
+}
+
+// ════════════════════════════════════════════════════════════
+//  MINI-JUEGO — Atrapa la comida (pausa activa)
+// ════════════════════════════════════════════════════════════
+const MiniJuego = {
+  puntos:0, tiempo:20, timer:null, spawnTimer:null, cestaX:50, activo:false,
+
+  iniciar(){
+    this.puntos=0; this.tiempo=20; this.cestaX=50; this.activo=true;
+    document.getElementById('mj-puntos').textContent='0';
+    document.getElementById('mj-tiempo').textContent='20';
+    const area=document.getElementById('mj-area');
+    area.innerHTML='';
+    // Gato con cesta abajo
+    const g=GATAS.find(x=>x.id===Estado.datos.gata)||GATAS[0];
+    const cesta=document.createElement('div');
+    cesta.className='mj-gato-cesta'; cesta.id='mj-cesta';
+    cesta.innerHTML='🧺'; cesta.style.left='50%';
+    area.appendChild(cesta);
+    mostrarPantalla('pantalla-minijuego');
+    Voz.decir(`¡Atrapa la comida con la cesta, ${NOMBRE}! Mueve el dedo.`);
+
+    // Mover cesta con mouse/touch
+    area.onmousemove=(e)=>this.mover(e.clientX, area);
+    area.ontouchmove=(e)=>{e.preventDefault(); this.mover(e.touches[0].clientX, area);};
+
+    this.timer=setInterval(()=>{
+      this.tiempo--;
+      document.getElementById('mj-tiempo').textContent=this.tiempo;
+      if(this.tiempo<=0) this.fin();
+    },1000);
+    this.spawnTimer=setInterval(()=>this.soltar(area),900);
+  },
+
+  mover(clientX, area){
+    const r=area.getBoundingClientRect();
+    let x=((clientX-r.left)/r.width)*100;
+    x=Math.max(5,Math.min(95,x));
+    this.cestaX=x;
+    document.getElementById('mj-cesta').style.left=x+'%';
+  },
+
+  soltar(area){
+    if(!this.activo) return;
+    const comidas=['🍎','🍪','🐟','🥛','⭐','🍌'];
+    const o=document.createElement('div');
+    o.className='mj-objeto mj-cae';
+    o.textContent=comidas[Math.floor(Math.random()*comidas.length)];
+    const x=5+Math.random()*85;
+    o.style.left=x+'%';
+    o.style.animationDuration=(2.5+Math.random()*1.5)+'s';
+    area.appendChild(o);
+    // Detectar si llega abajo cerca de la cesta
+    const check=setInterval(()=>{
+      if(!this.activo){clearInterval(check);o.remove();return;}
+      const or=o.getBoundingClientRect(), ar=area.getBoundingClientRect();
+      const oy=((or.top-ar.top)/ar.height)*100;
+      const ox=((or.left-ar.left)/ar.width)*100;
+      if(oy>82){
+        if(Math.abs(ox-this.cestaX)<12){
+          this.puntos++;
+          document.getElementById('mj-puntos').textContent=this.puntos;
+          Sonido.tono(700,0.1,0);
+        }
+        clearInterval(check); o.remove();
+      }
+    },100);
+    setTimeout(()=>{try{o.remove();clearInterval(check);}catch(e){}},5000);
+  },
+
+  fin(){
+    this.activo=false;
+    clearInterval(this.timer); clearInterval(this.spawnTimer);
+    // Recompensa: monedas = puntos
+    Estado.datos.monedas+=this.puntos;
+    Estado.datos.felicidad=Math.min(100,Estado.datos.felicidad+20);
+    Estado.guardar();
+    Voz.decir(`¡Genial ${NOMBRE}! Atrapaste ${this.puntos} y ganaste ${this.puntos} monedas.`);
+    setTimeout(()=>{ pintarMascota(); mostrarPantalla('pantalla-mascota'); },800);
+  },
+
+  salir(){
+    this.activo=false;
+    clearInterval(this.timer); clearInterval(this.spawnTimer);
+    pintarMascota(); mostrarPantalla('pantalla-mascota');
+  }
+};
 
 // ════════════════════════════════════════════════════════════
 //  MENÚ
@@ -577,10 +784,28 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btn-empezar').onclick=()=>{
     Sonido.init();
     if(Sonido.ctx && Sonido.ctx.state==='suspended') Sonido.ctx.resume();
-    pintarMenu();
-    mostrarPantalla('pantalla-menu');
-    Voz.decir(`¡Hola ${NOMBRE}! ¿Qué quieres aprender hoy?`);
+    // Si no ha elegido gata, mostrar selección primero
+    if(!Estado.datos.gata){
+      pintarElegirGata();
+      mostrarPantalla('pantalla-elegir-gata');
+      Voz.decir(`¡Hola ${NOMBRE}! Elige tu gatita favorita.`);
+    } else {
+      pintarMenu();
+      mostrarPantalla('pantalla-menu');
+      Voz.decir(`¡Hola ${NOMBRE}! ¿Qué quieres aprender hoy?`);
+    }
   };
+
+  // Mascota
+  document.getElementById('btn-mimascota').onclick=()=>{
+    if(!Estado.datos.gata){ pintarElegirGata(); mostrarPantalla('pantalla-elegir-gata'); return; }
+    pintarMascota(); mostrarPantalla('pantalla-mascota');
+    Voz.decir(`¡Hola! Esta es tu gatita, ${NOMBRE}.`);
+  };
+  document.getElementById('mascota-volver').onclick=()=>{ pintarMenu(); mostrarPantalla('pantalla-menu'); };
+  document.getElementById('btn-tienda').onclick=()=>{ Sonido.click(); pintarTienda(); };
+  document.getElementById('btn-jugar-gato').onclick=()=>{ Sonido.click(); MiniJuego.iniciar(); };
+  document.getElementById('mj-salir').onclick=()=>MiniJuego.salir();
 
   document.getElementById('btn-salir').onclick=()=>{
     Voz.detener(); Microfono.detener();

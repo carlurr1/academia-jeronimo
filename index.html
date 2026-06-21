@@ -39,6 +39,7 @@
         <span class="stat-pill">⭐ <b id="stat-estrellas">0</b></span>
         <span class="stat-pill">🪙 <b id="stat-monedas">10</b></span>
         <span class="stat-pill">🚀 Nivel <b id="stat-nivel">1</b></span>
+        <button id="btn-mimascota" class="btn-mascota">🐱 Mi gatita</button>
         <button id="btn-padres" class="btn-padres">👨‍👩‍👧 Padres</button>
       </div>
     </header>
@@ -76,6 +77,7 @@
     </div>
 
     <div class="zona-mic">
+      <div class="gata-acompanante" id="gata-acompanante"></div>
       <button id="btn-hablar" class="btn-hablar">🎤 Hablar</button>
       <span id="mic-texto" class="mic-texto"></span>
     </div>
@@ -95,6 +97,56 @@
       </div>
     </div>
     <div class="confeti-cont" id="confeti-cont"></div>
+  </section>
+
+  <!-- ════════ PANTALLA ELEGIR GATA ════════ -->
+  <section id="pantalla-elegir-gata" class="pantalla">
+    <div class="elegir-contenido">
+      <h1 class="elegir-titulo">¡Elige tu gatita, Jerónimo!</h1>
+      <div class="gatas-grid" id="gatas-grid"></div>
+    </div>
+  </section>
+
+  <!-- ════════ PANTALLA MASCOTA / TIENDA ════════ -->
+  <section id="pantalla-mascota" class="pantalla">
+    <header class="menu-header" style="background:#FF86D0;">
+      <div class="menu-titulo"><span id="mascota-nombre">Mi gatita</span></div>
+      <div class="menu-stats">
+        <span class="stat-pill">🪙 <b id="mascota-monedas">0</b></span>
+        <button id="mascota-volver" class="btn-padres">← Menú</button>
+      </div>
+    </header>
+    <div class="mascota-cuerpo">
+      <div class="mascota-escena" id="mascota-escena"></div>
+      <div class="mascota-barras">
+        <div class="barra-estado">
+          <span>😺 Felicidad</span>
+          <div class="estado-barra"><div class="estado-fill" id="felicidad-fill"></div></div>
+        </div>
+        <div class="barra-estado">
+          <span>🍽️ Hambre</span>
+          <div class="estado-barra"><div class="estado-fill" id="hambre-fill" style="background:#FF9600;"></div></div>
+        </div>
+      </div>
+      <div class="mascota-acciones">
+        <button id="btn-jugar-gato" class="btn-mediano btn-verde">🎮 Jugar</button>
+        <button id="btn-tienda" class="btn-mediano btn-azul">🛍️ Tienda</button>
+      </div>
+      <div class="tienda-grid" id="tienda-grid"></div>
+    </div>
+  </section>
+
+  <!-- ════════ MINI-JUEGO (pausa activa) ════════ -->
+  <section id="pantalla-minijuego" class="pantalla">
+    <header class="menu-header" style="background:#58CC02;">
+      <div class="menu-titulo"><span>🎮 ¡Atrapa la comida!</span></div>
+      <div class="menu-stats">
+        <span class="stat-pill">⭐ <b id="mj-puntos">0</b></span>
+        <span class="stat-pill">⏱️ <b id="mj-tiempo">20</b></span>
+        <button id="mj-salir" class="btn-padres">✕ Salir</button>
+      </div>
+    </header>
+    <div class="mj-area" id="mj-area"></div>
   </section>
 
   <!-- ════════ MODAL PADRES ════════ -->
@@ -124,6 +176,7 @@
   </section>
 
   <script src="js/datos.js"></script>
+  <script src="js/mascota.js"></script>
   <script src="js/voz.js"></script>
   <script src="js/app.js"></script>
   <script>
