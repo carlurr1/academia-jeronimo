@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "app.vercel.academia_jeronimo.twa",
-        "sha256_cert_fingerprints": ["21:38:0B:CB:9D:23:68:BF:96:6A:3A:D3:AF:B0:FC:40:F5:13:0B:E3:AE:4C:97:E6:12:68:9F:46:C1:78:9D:E0"]
+        "sha256_cert_fingerprints": ["0B:58:FB:EE:D3:9D:2B:53:BF:74:BA:B4:DC:E6:B9:C1:4C:51:45:9D:8D:8E:14:DA:4E:39:33:15:41:9E:70:76"]
       }
     }]
