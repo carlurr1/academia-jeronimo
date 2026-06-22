@@ -477,7 +477,7 @@ const Juego = {
       this.aciertos++;
       if(btn) btn.classList.add('correcta');
       document.getElementById('juego-estrellas').textContent=`⭐ ${this.aciertos}`;
-      this.mostrarOverlay(true, '¡Muy bien!');
+      this.mostrarOverlay(true, `¡Muy bien! Es ${this.ej.respuesta}`);
       Sonido.correcto();
       const ga=document.getElementById('gata-acompanante');
       if(ga && Estado.datos.gata){
@@ -485,22 +485,18 @@ const Juego = {
         if(g){ ga.innerHTML=svgGata(g,'comiendo',160,Estado.datos.accesorio);
           setTimeout(()=>{ if(g) ga.innerHTML=svgGata(g,'feliz',160,Estado.datos.accesorio);},900); }
       }
-      // Habla y AL TERMINAR pasa a la siguiente (no se corta)
-      Voz.decir(`¡Muy bien, ${NOMBRE}! Es ${this.ej.respuesta}.`, ()=>{
-        this.timer=setTimeout(()=>this.siguiente(), 600);
-      });
-      // respaldo por si la voz no dispara callback
-      this.timer=setTimeout(()=>this.siguiente(), 3500);
+      Voz.decir(`¡Muy bien, ${NOMBRE}! Es ${this.ej.respuesta}.`);
+      // Espera fija para que se oiga completo antes de la siguiente
+      this.timer=setTimeout(()=>this.siguiente(), 2800);
     } else {
       this.errores++;
       if(btn) btn.classList.add('incorrecta');
-      this.mostrarOverlay(false, `Era: ${this.ej.respuesta}`);
+      const dijo = op.txt;
+      this.mostrarOverlay(false, `No era ${dijo}. Era ${this.ej.respuesta}`);
       Sonido.error();
-      // "No, Jerónimo. Era 3." y espera a terminar antes de seguir
-      Voz.decir(`No, ${NOMBRE}. Era ${this.ej.respuesta}.`, ()=>{
-        this.timer=setTimeout(()=>this.siguiente(), 800);
-      });
-      this.timer=setTimeout(()=>this.siguiente(), 4000);
+      // Voz clara y completa; espera fija más larga para que se oiga toda
+      Voz.decir(`No, ${NOMBRE}. Eso no es. La respuesta correcta es ${this.ej.respuesta}.`);
+      this.timer=setTimeout(()=>this.siguiente(), 4200);
     }
   },
 
