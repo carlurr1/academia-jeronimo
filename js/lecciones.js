@@ -87,10 +87,14 @@ const Leccion = {
     document.getElementById('leccion-progreso').textContent=`${this.idx+1}/${this.pasos.length}`;
     renderImagenEn('leccion-imagen', p.render);
     document.getElementById('leccion-instruccion').textContent=`Di: "${p.decir}"`;
-    document.getElementById('leccion-feedback').textContent='';
+    document.getElementById('leccion-feedback').textContent='Toca 🎤 y repite';
+    document.getElementById('leccion-feedback').style.color='#1CB0F6';
     this._prepararBoton();
+    // La voz dice la palabra; al terminar, espera a que el niño toque "Hablar"
     Voz.decir(`Repite conmigo. ${p.decir}`, ()=>{
-      if(this._vigente(miSesion)) this.escuchar();
+      if(!this._vigente(miSesion)) return;
+      const btn=document.getElementById('leccion-hablar');
+      if(btn){ btn.classList.add('pulso'); }
     });
   },
 
@@ -122,32 +126,45 @@ const Leccion = {
       fb.style.color='#1CB0F6';
       return;
     }
-    btn.textContent='🔴 Te escucho...';
+    btn.textContent='🔴 Te escucho... ¡habla!';
     btn.classList.add('escuchando');
+    btn.classList.remove('pulso');
     fb.textContent='';
-    Microfono.escuchar((txt,ok)=>{
-      // si salió o cambió de sesión, NO hacer nada
+    Microfono.escuchar((txt,ok,motivo)=>{
       if(!this._vigente(miSesion)) return;
       btn.classList.remove('escuchando');
       btn.textContent='🎤 Hablar';
       const p=this.pasos[this.idx];
+
+      // CASO 1: no se captó voz → NO es error, deja reintentar sin penalizar
+      if(!ok && (motivo==='no-speech' || motivo==='timeout' || motivo==='aborted' || motivo==='no-start')){
+        fb.textContent='No te escuché. Toca 🎤 y habla fuerte'; fb.style.color='#1CB0F6';
+        // no incrementa intentos, no avanza, espera al botón
+        return;
+      }
+      // CASO 2: permiso denegado
+      if(!ok && motivo==='not-allowed'){
+        fb.textContent='Activa el micrófono o toca "Siguiente"'; fb.style.color='#FF4B4B';
+        return;
+      }
+
       const dichos=(txt||'').toLowerCase().split('|').map(s=>s.trim());
-      // Comparación flexible: cualquier variante contenida en lo que dijo
       const acerto = ok && txt && dichos.some(d =>
         p.acepta.some(a => d===a || d.includes(a) || a.includes(d)));
+
       if(acerto){
         fb.textContent='¡Muy bien! 🎉'; fb.style.color='#58CC02';
         Sonido.correcto();
         Voz.decir(`¡Muy bien! Es ${p.decir}.`, ()=>{ if(this._vigente(miSesion)) this.avanzar(); });
       } else {
+        // Sí habló pero se equivocó → ahí sí "era ..."
         this.intentos++;
         if(this.intentos>=2){
           fb.textContent=`Era "${p.decir}". ¡Sigamos!`; fb.style.color='#FF9600';
-          Voz.decir(`Era ${p.decir}. Muy bien, sigamos.`, ()=>{ if(this._vigente(miSesion)) this.avanzar(); });
+          Voz.decir(`Era ${p.decir}. Sigamos.`, ()=>{ if(this._vigente(miSesion)) this.avanzar(); });
         } else {
-          fb.textContent=`Inténtalo otra vez 🎤 o toca Siguiente`; fb.style.color='#FF9600';
-          Voz.decir(`Otra vez. ${p.decir}.`);
-          // NO vuelve a escuchar solo
+          fb.textContent=`Casi. Era "${p.decir}". Inténtalo 🎤`; fb.style.color='#FF9600';
+          Voz.decir(`Casi. Era ${p.decir}. Inténtalo otra vez.`);
         }
       }
     });

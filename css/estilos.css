@@ -291,9 +291,9 @@ html,body{
 .tienda-item.bloqueado{opacity:.5;}
 
 /* ════════ GATA ACOMPAÑANTE EN CLASES ════════ */
-.gata-acompanante{position:absolute;left:20px;bottom:10px;width:80px;height:80px;
+.gata-acompanante{position:absolute;left:20px;bottom:20px;width:160px;height:160px;z-index:5;
   pointer-events:none;}
-.gata-acompanante svg{width:80px;height:80px;}
+.gata-acompanante svg{width:160px;height:160px;}
 @media(max-width:700px){.gata-acompanante{display:none;}}
 
 /* ════════ MINI-JUEGO ════════ */
@@ -332,3 +332,14 @@ html,body{
 @keyframes gatoDuerme{0%,100%{transform:scale(1,1) rotate(-2deg);}50%{transform:scale(1.03,0.97) rotate(2deg);}}
 .mascota-escena svg:active{animation:gatoSalta .5s ease;}
 @keyframes gatoSalta{0%,100%{transform:translateY(0);}40%{transform:translateY(-25px);}}
+
+/* Botón que pulsa para invitar a hablar */
+.btn-hablar.pulso{animation:pulsoBtn 1s ease-in-out infinite;}
+@keyframes pulsoBtn{0%,100%{transform:scale(1);box-shadow:0 4px 0 var(--azul-osc);}50%{transform:scale(1.08);box-shadow:0 6px 14px rgba(28,176,246,0.5);}}
+
+/* ════════ FONDO TEMÁTICO DEL JUEGO ════════ */
+.fondo-tema{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.fondo-emoji{position:absolute;opacity:0.12;animation:fondoFlota 4s ease-in-out infinite;}
+@keyframes fondoFlota{0%,100%{transform:translateY(0) rotate(0);}50%{transform:translateY(-12px);}}
+/* El contenido del juego va por encima del fondo */
+#pantalla-juego > *:not(.fondo-tema){position:relative;z-index:1;}

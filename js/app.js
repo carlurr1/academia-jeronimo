@@ -256,6 +256,30 @@ function ejTransporte(){
 //  RENDER DE IMÁGENES
 // ════════════════════════════════════════════════════════════
 
+function pintarFondoTema(emoji, color){
+  const f=document.getElementById('fondo-tema');
+  if(!f) return;
+  f.innerHTML='';
+  f.style.background=`linear-gradient(170deg, ${aclararHexApp(color,90)}, #FFF9F0)`;
+  // Emojis grandes y tenues repartidos de fondo
+  const N=14;
+  for(let i=0;i<N;i++){
+    const e=document.createElement('span');
+    e.className='fondo-emoji';
+    e.textContent=emoji;
+    e.style.left=(Math.random()*92)+'%';
+    e.style.top=(Math.random()*88)+'%';
+    e.style.fontSize=(40+Math.random()*50)+'px';
+    e.style.transform=`rotate(${Math.random()*40-20}deg)`;
+    e.style.animationDelay=(Math.random()*3)+'s';
+    f.appendChild(e);
+  }
+}
+function aclararHexApp(h,amt){
+  try{let r=Math.min(255,parseInt(h.slice(1,3),16)+amt),g=Math.min(255,parseInt(h.slice(3,5),16)+amt),b=Math.min(255,parseInt(h.slice(5,7),16)+amt);
+    return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;}catch(e){return '#FFF9F0';}
+}
+
 function renderImagen(render){
   renderImagenGenerico(document.getElementById('imagen-cont'), render);
 }
@@ -335,12 +359,19 @@ const Juego = {
     document.getElementById('juego-titulo').textContent=this.modulo.nombre;
     document.getElementById('juego-estrellas').textContent='⭐ 0';
 
+    // Fondo temático según el módulo
+    const temas={
+      numeros:'🔢', vocales:'🅰️', abecedario:'📚', colores:'🎨',
+      figuras:'🔷', cuerpo:'🧍', animales:'🐾', frutas:'🍓',
+      ingles:'🌍', transporte:'🚗'
+    };
+    pintarFondoTema(temas[this.clave]||'⭐', col);
+
     mostrarPantalla('pantalla-juego');
-    // Gata acompañante
     const ga=document.getElementById('gata-acompanante');
     if(ga && Estado.datos.gata){
       const g=GATAS.find(x=>x.id===Estado.datos.gata);
-      if(g) ga.innerHTML=svgGata(g,'feliz',80,Estado.datos.accesorio);
+      if(g) ga.innerHTML=svgGata(g,'feliz',160,Estado.datos.accesorio);
     }
     Voz.decir(`¡Hola ${NOMBRE}! ¡Vamos a practicar ${this.modulo.nombre}!`, ()=>{
       setTimeout(()=>this.siguiente(), 300);
@@ -348,12 +379,15 @@ const Juego = {
   },
 
   siguiente(){
+    if(this._avanzando) return;   // evita doble llamada (callback + respaldo)
+    this._avanzando=true;
     if(this.timer){clearTimeout(this.timer); this.timer=null;}
     Microfono.detener();
     this.ocultarOverlay();
-    if(this.n >= PREGUNTAS_POR_SESION){ this.finalizar(); return; }
+    if(this.n >= PREGUNTAS_POR_SESION){ this._avanzando=false; this.finalizar(); return; }
     this.n++;
     this.respondido=false;
+    this._avanzando=false;
     document.getElementById('juego-progreso').textContent=`${this.n}/${PREGUNTAS_POR_SESION}`;
     document.getElementById('barra-progreso-fill').style.width=`${(this.n/PREGUNTAS_POR_SESION)*100}%`;
 
@@ -445,23 +479,29 @@ const Juego = {
       document.getElementById('juego-estrellas').textContent=`⭐ ${this.aciertos}`;
       this.mostrarOverlay(true, '¡Muy bien!');
       Sonido.correcto();
-      // Feedback hablado: "¡Exacto, es el 5!"
-      Voz.decir(`¡Exacto, ${NOMBRE}! Es ${this.ej.respuesta}.`);
       const ga=document.getElementById('gata-acompanante');
       if(ga && Estado.datos.gata){
         const g=GATAS.find(x=>x.id===Estado.datos.gata);
-        if(g){ ga.innerHTML=svgGata(g,'comiendo',80,Estado.datos.accesorio);
-          setTimeout(()=>{ if(g) ga.innerHTML=svgGata(g,'feliz',80,Estado.datos.accesorio);},700); }
+        if(g){ ga.innerHTML=svgGata(g,'comiendo',160,Estado.datos.accesorio);
+          setTimeout(()=>{ if(g) ga.innerHTML=svgGata(g,'feliz',160,Estado.datos.accesorio);},900); }
       }
+      // Habla y AL TERMINAR pasa a la siguiente (no se corta)
+      Voz.decir(`¡Muy bien, ${NOMBRE}! Es ${this.ej.respuesta}.`, ()=>{
+        this.timer=setTimeout(()=>this.siguiente(), 600);
+      });
+      // respaldo por si la voz no dispara callback
+      this.timer=setTimeout(()=>this.siguiente(), 3500);
     } else {
       this.errores++;
       if(btn) btn.classList.add('incorrecta');
       this.mostrarOverlay(false, `Era: ${this.ej.respuesta}`);
       Sonido.error();
-      // Feedback hablado: "No, era el 5"
-      Voz.decir(`No, ${NOMBRE}. Era ${this.ej.respuesta}.`);
+      // "No, Jerónimo. Era 3." y espera a terminar antes de seguir
+      Voz.decir(`No, ${NOMBRE}. Era ${this.ej.respuesta}.`, ()=>{
+        this.timer=setTimeout(()=>this.siguiente(), 800);
+      });
+      this.timer=setTimeout(()=>this.siguiente(), 4000);
     }
-    this.timer=setTimeout(()=>this.siguiente(), 2300);
   },
 
   mostrarOverlay(ok, txt){
