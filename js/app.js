@@ -473,6 +473,8 @@ const Juego = {
     if(this.timer){clearTimeout(this.timer); this.timer=null;}
     Microfono.detener();
 
+    const irSiguiente = ()=>{ this.timer=setTimeout(()=>this.siguiente(), 700); };
+
     if(op.correcta){
       this.aciertos++;
       if(btn) btn.classList.add('correcta');
@@ -485,18 +487,19 @@ const Juego = {
         if(g){ ga.innerHTML=svgGata(g,'comiendo',160,Estado.datos.accesorio);
           setTimeout(()=>{ if(g) ga.innerHTML=svgGata(g,'feliz',160,Estado.datos.accesorio);},900); }
       }
-      Voz.decir(`¡Muy bien, ${NOMBRE}! Es ${this.ej.respuesta}.`);
-      // Espera fija para que se oiga completo antes de la siguiente
-      this.timer=setTimeout(()=>this.siguiente(), 2800);
+      // La siguiente pregunta espera a que TERMINE de hablar (callback real)
+      Voz.decir(`¡Muy bien, ${NOMBRE}! Es ${this.ej.respuesta}.`, irSiguiente);
+      // respaldo amplio por si el callback no llega (6s)
+      this.timer=setTimeout(()=>this.siguiente(), 6000);
     } else {
       this.errores++;
       if(btn) btn.classList.add('incorrecta');
       const dijo = op.txt;
-      this.mostrarOverlay(false, `No era ${dijo}. Era ${this.ej.respuesta}`);
+      this.mostrarOverlay(false, `No es ${dijo}. Es ${this.ej.respuesta}`);
       Sonido.error();
-      // Voz clara y completa; espera fija más larga para que se oiga toda
-      Voz.decir(`No, ${NOMBRE}. Eso no es. La respuesta correcta es ${this.ej.respuesta}.`);
-      this.timer=setTimeout(()=>this.siguiente(), 4200);
+      // Mensaje claro y completo; la siguiente espera a que termine de hablar
+      Voz.decir(`No, ${NOMBRE}. La respuesta correcta es ${this.ej.respuesta}.`, irSiguiente);
+      this.timer=setTimeout(()=>this.siguiente(), 7000);
     }
   },
 

@@ -1,5 +1,5 @@
 // Service Worker — Academia de Jerónimo
-const CACHE = 'academia-jeronimo-v5';
+const CACHE = 'academia-jeronimo-v6';
 const ARCHIVOS = [
   './', './index.html',
   './css/estilos.css',

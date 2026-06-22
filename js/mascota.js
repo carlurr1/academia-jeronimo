@@ -6,36 +6,36 @@
 const GATAS = [
   {
     id: "negra",
-    nombre: "Gata Negra",
+    nombre: "Venus",
     cuerpo: "#2B2B30", cuerpo2:"#1A1A1E",
     panza: "#3A3A40",
-    ojos: "#FFD700",   // ojos amarillos sobre negro
+    ojos: "#FFD700",
     nariz: "#E89AAE",
     oreja: "#4A4A50"
   },
   {
     id: "rusa",
-    nombre: "Gata Gris",
+    nombre: "Queen",
     cuerpo: "#8E9BA8", cuerpo2:"#6E7B88",
     panza: "#AEB9C4",
-    ojos: "#3DDC84",   // ojos verdes (azul ruso)
+    ojos: "#3DDC84",
     nariz: "#C98A9E",
     oreja: "#7A8794"
   },
   {
     id: "atigrada",
-    nombre: "Gato Atigrado",
-    cuerpo: "#E8A85C", cuerpo2:"#C98A3E",
-    panza: "#F5D9A8",
-    ojos: "#5BC85B",
-    nariz: "#E89AAE",
-    oreja: "#D4943E",
+    nombre: "Orión",
+    cuerpo: "#9C7848", cuerpo2:"#5C4528",   // café/marrón como la imagen
+    panza: "#D8C098",
+    ojos: "#7BC85B",
+    nariz: "#C98A7A",
+    oreja: "#7A5C34",
     rayas: true
   },
   {
     id: "tricolor",
-    nombre: "Gata Tricolor",
-    cuerpo: "#F5F0E8", cuerpo2:"#E0D8C8",  // base blanca
+    nombre: "Gomita",
+    cuerpo: "#F5F0E8", cuerpo2:"#E0D8C8",
     panza: "#FFFFFF",
     ojos: "#5BC85B",
     nariz: "#E89AAE",
@@ -71,11 +71,18 @@ function svgGata(gata, estado='feliz', size=200, accesorio=null){
     : `<path d="M92 117 q8 6 16 0" stroke="#1A1A1E" stroke-width="3" fill="none" stroke-linecap="round"/>`;
 
   const rayas = g.rayas ? `
-    <path d="M100 46 v22" stroke="${g.cuerpo2}" stroke-width="6" stroke-linecap="round" opacity="0.7"/>
-    <path d="M82 50 v16" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
-    <path d="M118 50 v16" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
-    <path d="M53 108 h18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
-    <path d="M129 108 h18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>` : '';
+    <path d="M100 44 v24" stroke="${g.cuerpo2}" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    <path d="M82 48 v18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+    <path d="M118 48 v18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+    <path d="M66 56 v14" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    <path d="M134 56 v14" stroke="${g.cuerpo2}" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    <path d="M52 106 h20" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+    <path d="M128 106 h20" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.65"/>
+    <path d="M50 124 h18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M132 124 h18" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M70 150 h22" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.55"/>
+    <path d="M108 150 h22" stroke="${g.cuerpo2}" stroke-width="5" stroke-linecap="round" opacity="0.55"/>
+    <path d="M85 100 q15 -4 30 0" stroke="${g.cuerpo2}" stroke-width="3" fill="none" opacity="0.5"/>` : '';
 
   const tricolor = g.tricolor ? `
     <path d="M60 58 q-14 20 -2 48 q16 6 24 -6 q-10 -30 -22 -42z" fill="#E8A85C" opacity="0.9"/>
