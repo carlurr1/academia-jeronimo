@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.academia_jeronimo.twa",
+        "sha256_cert_fingerprints": ["21:38:0B:CB:9D:23:68:BF:96:6A:3A:D3:AF:B0:FC:40:F5:13:0B:E3:AE:4C:97:E6:12:68:9F:46:C1:78:9D:E0"]
+      }
+    }]
