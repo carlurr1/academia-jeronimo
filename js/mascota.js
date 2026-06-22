@@ -41,13 +41,24 @@ const GATAS = [
     nariz: "#E89AAE",
     oreja: "#E8A85C",
     tricolor: true
+  },
+  {
+    id: "apolo",
+    nombre: "Apolo",
+    perro: true,
+    cuerpo: "#E8B860", cuerpo2:"#C89540",   // dorado golden retriever
+    panza: "#F5DDA8",
+    ojos: "#5C3A1E",
+    nariz: "#3A2A1E",
+    oreja: "#D4A24C"
   }
 ];
 
-// Genera el SVG de una gata con sombreado, volumen y vida
+// Genera el SVG de una mascota (gata o perro) con sombreado, volumen y vida
 // estado: 'feliz', 'normal', 'hambre', 'comiendo', 'durmiendo'
 // accesorio: null, 'gorro', 'gafas', 'capa', 'corona', 'mascara'...
 function svgGata(gata, estado='feliz', size=200, accesorio=null){
+  if(gata && gata.perro) return svgPerro(gata, estado, size, accesorio);
   const g = gata;
   const uid = g.id + Math.random().toString(36).slice(2,6); // ids únicos para gradientes
   const ojoForma = (estado==='durmiendo')
@@ -162,6 +173,87 @@ function svgGata(gata, estado='feliz', size=200, accesorio=null){
 function aclararHex(h,amt=25){
   try{let r=Math.min(255,parseInt(h.slice(1,3),16)+amt),gg=Math.min(255,parseInt(h.slice(3,5),16)+amt),b=Math.min(255,parseInt(h.slice(5,7),16)+amt);
     return `#${r.toString(16).padStart(2,'0')}${gg.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;}catch(e){return h;}
+}
+
+// Genera el SVG de un perrito Golden Retriever (Apolo)
+function svgPerro(perro, estado='feliz', size=200, accesorio=null){
+  const g = perro;
+  const uid = g.id + Math.random().toString(36).slice(2,6);
+
+  const ojoForma = (estado==='durmiendo')
+    ? `<path d="M68 92 q11 7 22 0" stroke="#3A2A1E" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+       <path d="M110 92 q11 7 22 0" stroke="#3A2A1E" stroke-width="3.5" fill="none" stroke-linecap="round"/>`
+    : `<ellipse cx="79" cy="92" rx="9" ry="${estado==='hambre'?7:11}" fill="white"/>
+       <ellipse cx="121" cy="92" rx="9" ry="${estado==='hambre'?7:11}" fill="white"/>
+       <circle cx="79" cy="94" r="6" fill="${g.ojos}"/>
+       <circle cx="121" cy="94" r="6" fill="${g.ojos}"/>
+       <circle cx="79" cy="94" r="3" fill="#1A1A1E"/>
+       <circle cx="121" cy="94" r="3" fill="#1A1A1E"/>
+       <circle cx="81" cy="91" r="1.8" fill="white"/>
+       <circle cx="123" cy="91" r="1.8" fill="white"/>`;
+
+  // Hocico claro + nariz + boca + lengua (feliz)
+  const hocico = `<ellipse cx="100" cy="116" rx="26" ry="22" fill="${g.panza}"/>`;
+  const nariz = `<ellipse cx="100" cy="108" rx="9" ry="6.5" fill="${g.nariz}"/>
+                 <ellipse cx="97" cy="106" rx="2.5" ry="1.6" fill="#fff" opacity="0.4"/>`;
+  const boca = (estado==='comiendo' || estado==='feliz')
+    ? `<path d="M100 114 v10" stroke="#3A2A1E" stroke-width="2.5" stroke-linecap="round"/>
+       <path d="M100 124 q-10 9 -20 2" stroke="#3A2A1E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+       <path d="M100 124 q10 9 20 2" stroke="#3A2A1E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+       <ellipse cx="100" cy="130" rx="7" ry="9" fill="#F06A8A"/>`  // lengua
+    : (estado==='hambre')
+    ? `<path d="M100 114 v8" stroke="#3A2A1E" stroke-width="2.5" stroke-linecap="round"/>
+       <ellipse cx="100" cy="128" rx="6" ry="8" fill="#F06A8A"/>`
+    : `<path d="M100 114 v9" stroke="#3A2A1E" stroke-width="2.5" stroke-linecap="round"/>
+       <path d="M100 123 q-8 6 -16 1 M100 123 q8 6 16 1" stroke="#3A2A1E" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+
+  let acc='';
+  if(accesorio==='gorro') acc=`<path d="M60 50 q40 -38 80 0 z" fill="#FF4B4B"/><circle cx="100" cy="14" r="9" fill="white"/><rect x="56" y="46" width="88" height="11" rx="5.5" fill="white"/>`;
+  else if(accesorio==='gafas') acc=`<circle cx="79" cy="92" r="15" fill="#1CB0F6" opacity="0.35"/><circle cx="121" cy="92" r="15" fill="#1CB0F6" opacity="0.35"/><circle cx="79" cy="92" r="15" fill="none" stroke="#1A1A1E" stroke-width="4"/><circle cx="121" cy="92" r="15" fill="none" stroke="#1A1A1E" stroke-width="4"/><path d="M96 92 h8" stroke="#1A1A1E" stroke-width="4"/>`;
+  else if(accesorio==='capa') acc=`<path d="M46 132 q54 42 108 0 l-10 54 q-44 22 -88 0 z" fill="#FF4B4B"/><path d="M58 136 l10 10 M142 136 l-10 10" stroke="#FFC800" stroke-width="4"/>`;
+  else if(accesorio==='corona') acc=`<path d="M64 44 l8 -26 12 16 16 -22 16 22 12 -16 8 26 z" fill="#FFC800" stroke="#E6B400" stroke-width="2"/>`;
+  else if(accesorio==='mascara') acc=`<path d="M56 86 q44 -16 88 0 l-4 16 q-40 -10 -80 0 z" fill="#1A1A2E"/><circle cx="79" cy="92" r="8" fill="white"/><circle cx="121" cy="92" r="8" fill="white"/>`;
+  else if(accesorio==='monos') acc=`<path d="M88 146 l-14 -8 0 16 z" fill="#FF4B4B"/><path d="M112 146 l14 -8 0 16 z" fill="#FF4B4B"/><circle cx="100" cy="146" r="6" fill="#E23D3D"/>`;
+
+  const corazones=(estado==='comiendo')?`<text x="148" y="48" font-size="24">❤️</text><text x="38" y="58" font-size="18">❤️</text>`:'';
+  const zzz=(estado==='durmiendo')?`<text x="142" y="48" font-size="22" fill="#999">z</text><text x="158" y="34" font-size="15" fill="#bbb">z</text>`:'';
+  const animClass=(estado==='durmiendo')?'gato-dormido':'gato-vivo';
+
+  return `<svg viewBox="0 0 200 205" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" class="${animClass}">
+    <defs>
+      <radialGradient id="pc${uid}" cx="42%" cy="35%" r="72%">
+        <stop offset="0%" stop-color="${aclararHex(g.cuerpo,28)}"/>
+        <stop offset="100%" stop-color="${g.cuerpo}"/>
+      </radialGradient>
+    </defs>
+    ${accesorio==='capa'?acc:''}
+    <!-- sombra suelo -->
+    <ellipse cx="100" cy="196" rx="50" ry="9" fill="#000" opacity="0.12"/>
+    <!-- cola peluda que se mueve -->
+    <path class="gato-cola" d="M150 168 q44 4 40 -34" stroke="${g.cuerpo}" stroke-width="17" fill="none" stroke-linecap="round"/>
+    <!-- cuerpo -->
+    <ellipse cx="100" cy="152" rx="55" ry="44" fill="url(#pc${uid})"/>
+    <ellipse cx="100" cy="162" rx="34" ry="26" fill="${g.panza}" opacity="0.85"/>
+    <!-- patas -->
+    <ellipse cx="76" cy="188" rx="15" ry="10" fill="${g.cuerpo}"/>
+    <ellipse cx="124" cy="188" rx="15" ry="10" fill="${g.cuerpo}"/>
+    <!-- orejas largas caídas (golden) -->
+    <ellipse cx="50" cy="92" rx="17" ry="32" fill="${g.oreja}" transform="rotate(-12 50 92)"/>
+    <ellipse cx="150" cy="92" rx="17" ry="32" fill="${g.oreja}" transform="rotate(12 150 92)"/>
+    <ellipse cx="52" cy="90" rx="10" ry="22" fill="${aclararHex(g.oreja,15)}" transform="rotate(-12 52 90)"/>
+    <ellipse cx="148" cy="90" rx="10" ry="22" fill="${aclararHex(g.oreja,15)}" transform="rotate(12 148 90)"/>
+    <!-- cabeza -->
+    <circle cx="100" cy="90" r="50" fill="url(#pc${uid})"/>
+    <!-- copete -->
+    <path d="M100 40 q-10 6 -4 14 q4 -6 8 -6 q4 0 8 6 q6 -8 -4 -14 q-4 -3 -8 0z" fill="${aclararHex(g.cuerpo,18)}"/>
+    ${hocico}
+    ${ojoForma}
+    ${nariz}
+    ${boca}
+    ${estado==='feliz'?`<ellipse cx="62" cy="104" rx="9" ry="6" fill="#FF9DB0" opacity="0.4"/><ellipse cx="138" cy="104" rx="9" ry="6" fill="#FF9DB0" opacity="0.4"/>`:''}
+    ${accesorio && accesorio!=='capa'?acc:''}
+    ${corazones}${zzz}
+  </svg>`;
 }
 
 // ──────── Tienda ────────

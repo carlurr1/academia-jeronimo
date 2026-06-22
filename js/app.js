@@ -603,7 +603,7 @@ function pintarElegirGata(destino){
     card.onclick=()=>{
       Estado.datos.gata=g.id; Estado.guardar();
       Sonido.click();
-      Voz.decir(`¡${g.nombre}! ¡Qué linda gatita, ${NOMBRE}!`);
+      Voz.decir(`¡${g.nombre}! ¡Qué linda mascota, ${NOMBRE}!`);
       if(destino==='mascota'){
         pintarMascota(); mostrarPantalla('pantalla-mascota'); pintarTienda('accesorio');
       } else {
@@ -909,7 +909,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     // SIEMPRE deja elegir/cambiar la gata al iniciar
     pintarElegirGata();
     mostrarPantalla('pantalla-elegir-gata');
-    Voz.decir(`¡Hola ${NOMBRE}! Elige tu gatita favorita.`);
+    Voz.decir(`¡Hola ${NOMBRE}! Elige tu mascota favorita.`);
   };
 
   // Mascota
@@ -917,7 +917,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     if(!Estado.datos.gata){ pintarElegirGata(); mostrarPantalla('pantalla-elegir-gata'); return; }
     pintarMascota(); mostrarPantalla('pantalla-mascota');
     pintarTienda('accesorio');   // muestra ropa de héroe de una vez
-    Voz.decir(`¡Hola! Esta es tu gatita, ${NOMBRE}. ¡Puedes vestirla!`);
+    Voz.decir(`¡Hola! Esta es tu mascota, ${NOMBRE}. ¡Puedes vestirla!`);
   };
   document.getElementById('mascota-volver').onclick=()=>{ pintarMenu(); mostrarPantalla('pantalla-menu'); };
   document.getElementById('btn-tienda').onclick=()=>{ Sonido.click(); pintarTienda('accesorio'); };
@@ -926,7 +926,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     Sonido.click();
     pintarElegirGata('mascota');
     mostrarPantalla('pantalla-elegir-gata');
-    Voz.decir(`Elige otra gatita, ${NOMBRE}.`);
+    Voz.decir(`Elige otra mascota, ${NOMBRE}.`);
   };
   document.getElementById('mj-salir').onclick=()=>MiniJuegos.salir();
   document.getElementById('leccion-salir').onclick=()=>{
