@@ -379,15 +379,21 @@ const Juego = {
   },
 
   siguiente(){
-    if(this._avanzando) return;   // evita doble llamada (callback + respaldo)
-    this._avanzando=true;
+    // Sistema de turno: cada avance tiene un id único; ignora llamadas duplicadas
+    const ahora = Date.now();
+    if(this._ultimoAvance && (ahora - this._ultimoAvance) < 1200){
+      return;  // ya avanzamos hace menos de 1.2s → es una llamada duplicada, ignorar
+    }
+    this._ultimoAvance = ahora;
+
     if(this.timer){clearTimeout(this.timer); this.timer=null;}
     Microfono.detener();
     this.ocultarOverlay();
-    if(this.n >= PREGUNTAS_POR_SESION){ this._avanzando=false; this.finalizar(); return; }
+    if(this.n >= PREGUNTAS_POR_SESION){ this.finalizar(); return; }
     this.n++;
     this.respondido=false;
-    this._avanzando=false;
+    this._turnoPregunta = (this._turnoPregunta||0) + 1;
+    const miTurno = this._turnoPregunta;
     document.getElementById('juego-progreso').textContent=`${this.n}/${PREGUNTAS_POR_SESION}`;
     document.getElementById('barra-progreso-fill').style.width=`${(this.n/PREGUNTAS_POR_SESION)*100}%`;
 
@@ -395,15 +401,14 @@ const Juego = {
     renderImagen(this.ej.render);
     document.getElementById('pregunta-texto').textContent=this.ej.pregunta;
 
-    // Mostrar opciones vacías mientras habla
     document.getElementById('opciones-grid').innerHTML='';
     document.getElementById('mic-texto').textContent='🔊 Escucha...';
     document.getElementById('btn-hablar').classList.remove('escuchando');
     document.getElementById('btn-hablar').textContent='🎤 Hablar';
 
-    // Voz lee la pregunta → luego muestra opciones
+    // Voz lee la pregunta → luego muestra opciones (solo si sigue siendo el turno actual)
     Voz.decir(this.ej.pregunta, ()=>{
-      if(this.respondido) return;
+      if(this.respondido || miTurno!==this._turnoPregunta) return;
       this.mostrarOpciones();
       this.timer=setTimeout(()=>this.activarMic(), 4500);
     });
@@ -471,9 +476,16 @@ const Juego = {
     if(this.respondido) return;
     this.respondido=true;
     if(this.timer){clearTimeout(this.timer); this.timer=null;}
+    if(this.timerResp){clearTimeout(this.timerResp); this.timerResp=null;}
     Microfono.detener();
 
-    const irSiguiente = ()=>{ this.timer=setTimeout(()=>this.siguiente(), 700); };
+    let yaAvanzo=false;
+    const irSiguiente = ()=>{
+      if(yaAvanzo) return;
+      yaAvanzo=true;
+      if(this.timerResp){clearTimeout(this.timerResp); this.timerResp=null;}
+      this.timer=setTimeout(()=>this.siguiente(), 700);
+    };
 
     if(op.correcta){
       this.aciertos++;
@@ -487,19 +499,16 @@ const Juego = {
         if(g){ ga.innerHTML=svgGata(g,'comiendo',160,Estado.datos.accesorio);
           setTimeout(()=>{ if(g) ga.innerHTML=svgGata(g,'feliz',160,Estado.datos.accesorio);},900); }
       }
-      // La siguiente pregunta espera a que TERMINE de hablar (callback real)
       Voz.decir(`¡Muy bien, ${NOMBRE}! Es ${this.ej.respuesta}.`, irSiguiente);
-      // respaldo amplio por si el callback no llega (6s)
-      this.timer=setTimeout(()=>this.siguiente(), 6000);
+      this.timerResp=setTimeout(irSiguiente, 6000);   // respaldo si la voz no termina
     } else {
       this.errores++;
       if(btn) btn.classList.add('incorrecta');
       const dijo = op.txt;
       this.mostrarOverlay(false, `No es ${dijo}. Es ${this.ej.respuesta}`);
       Sonido.error();
-      // Mensaje claro y completo; la siguiente espera a que termine de hablar
       Voz.decir(`No, ${NOMBRE}. La respuesta correcta es ${this.ej.respuesta}.`, irSiguiente);
-      this.timer=setTimeout(()=>this.siguiente(), 7000);
+      this.timerResp=setTimeout(irSiguiente, 7000);
     }
   },
 
@@ -582,18 +591,24 @@ function lanzarConfeti(){
 // ════════════════════════════════════════════════════════════
 //  MASCOTA — selección, escena, tienda
 // ════════════════════════════════════════════════════════════
-function pintarElegirGata(){
+function pintarElegirGata(destino){
+  destino = destino || 'menu';
   const grid=document.getElementById('gatas-grid');
   grid.innerHTML='';
   GATAS.forEach(g=>{
     const card=document.createElement('button');
     card.className='gata-card';
-    card.innerHTML=svgGata(g,'feliz',150)+`<div class="gn">${g.nombre}</div>`;
+    const actual = Estado.datos.gata===g.id ? '<div style="color:#58CC02;font-weight:800;font-size:13px;">✓ Elegida</div>' : '';
+    card.innerHTML=svgGata(g,'feliz',150)+`<div class="gn">${g.nombre}</div>${actual}`;
     card.onclick=()=>{
       Estado.datos.gata=g.id; Estado.guardar();
       Sonido.click();
-      Voz.decir(`¡Qué linda gatita! Ahora vamos a aprender, ${NOMBRE}.`);
-      pintarMenu(); mostrarPantalla('pantalla-menu');
+      Voz.decir(`¡${g.nombre}! ¡Qué linda gatita, ${NOMBRE}!`);
+      if(destino==='mascota'){
+        pintarMascota(); mostrarPantalla('pantalla-mascota'); pintarTienda('accesorio');
+      } else {
+        pintarMenu(); mostrarPantalla('pantalla-menu');
+      }
     };
     grid.appendChild(card);
   });
@@ -891,16 +906,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('btn-empezar').onclick=()=>{
     Sonido.init();
     if(Sonido.ctx && Sonido.ctx.state==='suspended') Sonido.ctx.resume();
-    // Si no ha elegido gata, mostrar selección primero
-    if(!Estado.datos.gata){
-      pintarElegirGata();
-      mostrarPantalla('pantalla-elegir-gata');
-      Voz.decir(`¡Hola ${NOMBRE}! Elige tu gatita favorita.`);
-    } else {
-      pintarMenu();
-      mostrarPantalla('pantalla-menu');
-      Voz.decir(`¡Hola ${NOMBRE}! ¿Qué quieres aprender hoy?`);
-    }
+    // SIEMPRE deja elegir/cambiar la gata al iniciar
+    pintarElegirGata();
+    mostrarPantalla('pantalla-elegir-gata');
+    Voz.decir(`¡Hola ${NOMBRE}! Elige tu gatita favorita.`);
   };
 
   // Mascota
@@ -913,6 +922,12 @@ window.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('mascota-volver').onclick=()=>{ pintarMenu(); mostrarPantalla('pantalla-menu'); };
   document.getElementById('btn-tienda').onclick=()=>{ Sonido.click(); pintarTienda('accesorio'); };
   document.getElementById('btn-jugar-gato').onclick=()=>{ Sonido.click(); MiniJuegos.abrirSelector(); };
+  document.getElementById('btn-cambiar-gata').onclick=()=>{
+    Sonido.click();
+    pintarElegirGata('mascota');
+    mostrarPantalla('pantalla-elegir-gata');
+    Voz.decir(`Elige otra gatita, ${NOMBRE}.`);
+  };
   document.getElementById('mj-salir').onclick=()=>MiniJuegos.salir();
   document.getElementById('leccion-salir').onclick=()=>{
     Leccion.salir(); pintarMenu(); mostrarPantalla('pantalla-menu');
