@@ -232,18 +232,51 @@ html,body{
 .padres-modulo .pm-pct{font-size:16px; color:var(--texto-suave); min-width:50px; text-align:right;}
 
 /* Responsive tablet */
-@media (max-width:820px){
-  .juego-cuerpo{gap:20px;}
-  .imagen-cont{min-width:160px; min-height:160px; padding:16px;}
-  .imagen-cont img{width:150px; height:150px;}
-  .pregunta-banda h2{font-size:24px;}
-  .btn-opcion{font-size:22px; padding:18px 12px;}
+/* ═══ TABLET VERTICAL (portrait): apilar imagen arriba, botones abajo, todo grande ═══ */
+@media (orientation: portrait){
+  .juego-cuerpo{
+    flex-direction:column; gap:30px; padding:24px 20px;
+    justify-content:flex-start; padding-top:40px;
+  }
+  .imagen-cont{
+    min-width:240px; min-height:240px; padding:28px;
+  }
+  .imagen-cont img{width:220px; height:220px;}
+  .imagen-num{font-size:150px; width:210px; height:210px;}
+  .imagen-letra{font-size:160px; width:220px; height:220px;}
+  .imagen-color{width:210px; height:210px;}
+  .imagen-figura{width:220px; height:220px;}
+  .opciones-grid{
+    max-width:680px; gap:18px;
+  }
+  .btn-opcion{font-size:30px; padding:30px 16px; min-height:90px;}
+  .pregunta-banda h2{font-size:30px;}
 }
+
+/* ═══ TABLET HORIZONTAL (landscape): imagen y botones lado a lado ═══ */
+@media (orientation: landscape){
+  .juego-cuerpo{
+    flex-direction:row; gap:50px; padding:20px 40px;
+    align-items:center; justify-content:center;
+  }
+  .imagen-cont{min-width:220px; min-height:220px;}
+  .imagen-cont img{width:200px; height:200px;}
+  .opciones-grid{max-width:560px;}
+  .btn-opcion{font-size:26px; padding:24px 16px; min-height:80px;}
+}
+
+/* Pantallas estrechas (celular): menú en 2 columnas */
 @media (max-width:560px){
   .grid-modulos{grid-template-columns:1fr 1fr;}
   .menu-titulo{font-size:18px;}
   .menu-saludo h2{font-size:20px;}
-  .juego-cuerpo{flex-direction:column;}
+  .btn-opcion{font-size:24px;}
+}
+
+/* Tablet vertical: la mascota acompañante no estorba pero se ve */
+@media (orientation: portrait){
+  .gata-acompanante{width:120px;height:120px;left:12px;bottom:12px;}
+  .gata-acompanante svg{width:120px;height:120px;}
 }
 
 /* ════════ BOTÓN MASCOTA EN MENÚ ════════ */
